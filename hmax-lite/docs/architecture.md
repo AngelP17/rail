@@ -61,6 +61,12 @@ HMAX-Lite is a real-time Digital Twin simulation for the Panama Metro Line 3 mon
 
 ### Backend: Train Simulator (`simulator.py`)
 
+**Tech Stack:**
+- **Python 3.14+**
+- **FastAPI 0.128+**
+- **Pydantic v2** (Strict data validation)
+- **SSE-Starlette** (Real-time events)
+
 The physics engine simulates realistic train behavior:
 
 **Position Interpolation:**
@@ -73,11 +79,10 @@ The physics engine simulates realistic train behavior:
 Speed
   ^
   │    ┌─────────────────┐
-80│    │   CRUISE @80    │
-  │   /│                 │\
-  │  / │                 │ \
-  │ /  │                 │  \
-  │/   │                 │   \
+  │   /│   CRUISE @80    │
+80│  / │                 │\
+  │ /  │                 │ \
+  │/   │                 │  \
 0 └────┴─────────────────┴────►
   0%  25%               75%  100%
        Station Progress
@@ -103,11 +108,13 @@ Speed
 ### Frontend: Operations Dashboard
 
 **Technology Stack:**
-- React 18 with TypeScript
-- TanStack Query for data fetching and caching
-- Leaflet + React-Leaflet for mapping
-- Recharts for data visualization
-- Tailwind CSS for styling
+- **Node.js 18+**
+- **Vite 5+** (Build tool)
+- **React 18** with TypeScript
+- **TanStack Query v5** for data fetching
+- **Leaflet** + React-Leaflet for mapping
+- **Recharts** for data visualization
+- **Tailwind CSS 3.4** for styling
 
 **Component Hierarchy:**
 ```
@@ -136,23 +143,14 @@ App
 ## Key Engineering Decisions
 
 ### 1. Polling vs WebSockets
-Chose polling for simplicity and reliability. The 1-second interval provides sufficient real-time feel for a demonstration while being easier to debug and deploy.
+Chose polling (1s interval) for simplicity and robust connection handling in MVP. SSE (Server-Sent Events) endpoint `/api/stream` is implemented for future real-time upgrades.
 
 ### 2. State Management
 TanStack Query handles server state with automatic caching and background updates. Local state (selection, history) managed with React hooks.
 
-### 3. Map Library
-Leaflet chosen for:
-- Lightweight footprint
-- Extensive customization options
-- React bindings available
-- Works well offline/with dark tiles
-
-### 4. Styling Approach
-Tailwind CSS with custom SCADA color palette provides:
-- Consistent industrial aesthetic
-- Dark mode optimized for control room environments
-- Easy customization via config
+### 3. Dependency Management
+- **Backend:** Uses `venv` with unpinned `requirements.txt` to ensure compatibility with latest Python versions (tested on 3.14).
+- **Frontend:** Standard `npm` workflow with modern Vite scaffolding.
 
 ## Performance Considerations
 
@@ -171,12 +169,28 @@ Tailwind CSS with custom SCADA color palette provides:
 
 ## Deployment
 
-```bash
-# Development
-docker-compose up --build
+### Local Development (Manual)
 
-# Production
-docker-compose -f docker-compose.prod.yml up -d
+**Backend:**
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 -m uvicorn main:app --reload --port 8000
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Docker (Optional)
+
+```bash
+docker-compose up --build
 ```
 
 Access points:
