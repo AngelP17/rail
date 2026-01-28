@@ -1,0 +1,32 @@
+# System
+.DS_Store
+.env
+.venv
+venv/
+__pycache__/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Python
+*.pyc
+*.pyo
+build/
+develop-eggs/
+eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Kimi/Claude
+.kimi/
+.claude/
+!.claude/skills

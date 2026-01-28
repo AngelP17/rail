@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Backend: Train Simulator & Telemetry Engine
+  # =============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hmax-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENV=development
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - hmax-network
+
+  # =============================================================================
+  # Frontend: Operations Control Center Dashboard
+  # =============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hmax-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - hmax-network
+
+networks:
+  hmax-network:
+    driver: bridge
+    name: hmax-network

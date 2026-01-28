@@ -1,0 +1,865 @@
+/**
+ * HMAX-Lite: Global Styles - Enterprise SCADA Edition
+ * ====================================================
+ * 
+ * Industrial-grade SCADA Dark Mode styling for the Operations Dashboard.
+ * Enhanced with enterprise-level polish, animations, and accessibility.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   CSS Variables & Design Tokens
+   ============================================================================ */
+
+:root {
+  /* SCADA Color Palette - Enhanced */
+  --scada-bg: #0a0e14;
+  --scada-bg-gradient: linear-gradient(180deg, #0a0e14 0%, #0d1320 100%);
+  --scada-surface: #0f172a;
+  --scada-surface-elevated: #141d2e;
+  --scada-card: #1e293b;
+  --scada-card-hover: #253449;
+  --scada-border: #334155;
+  --scada-border-subtle: rgba(51, 65, 85, 0.5);
+  --scada-text: #e2e8f0;
+  --scada-text-secondary: #94a3b8;
+  --scada-muted: #64748b;
+
+  /* Status Colors - Enhanced with glow variants */
+  --status-normal: #00ff9d;
+  --status-normal-glow: rgba(0, 255, 157, 0.4);
+  --status-warning: #f59e0b;
+  --status-warning-glow: rgba(245, 158, 11, 0.4);
+  --status-danger: #ef4444;
+  --status-danger-glow: rgba(239, 68, 68, 0.4);
+  --status-tunnel: #a855f7;
+  --status-tunnel-glow: rgba(168, 85, 247, 0.4);
+  --status-info: #3b82f6;
+  --status-info-glow: rgba(59, 130, 246, 0.4);
+
+  /* Animation Timing */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Spacing Scale */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --shadow-glow-green: 0 0 20px var(--status-normal-glow);
+  --shadow-glow-amber: 0 0 20px var(--status-warning-glow);
+  --shadow-glow-purple: 0 0 20px var(--status-tunnel-glow);
+}
+
+/* ============================================================================
+   Base Styles
+   ============================================================================ */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--scada-bg);
+  background-image: 
+    radial-gradient(ellipse at top, rgba(59, 130, 246, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(0, 255, 157, 0.02) 0%, transparent 50%);
+  color: var(--scada-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* ============================================================================
+   Leaflet Map Customization - Enterprise Edition
+   ============================================================================ */
+
+.leaflet-container {
+  background-color: var(--scada-bg) !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Dark mode attribution */
+.leaflet-control-attribution {
+  background-color: var(--scada-surface) !important;
+  color: var(--scada-muted) !important;
+  font-size: 10px !important;
+  border-radius: 4px 0 0 0;
+  backdrop-filter: blur(8px);
+}
+
+.leaflet-control-attribution a {
+  color: var(--status-info) !important;
+  transition: color var(--transition-fast);
+}
+
+.leaflet-control-attribution a:hover {
+  color: var(--status-normal) !important;
+}
+
+/* Dark mode zoom controls */
+.leaflet-control-zoom {
+  border: 1px solid var(--scada-border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.leaflet-control-zoom a {
+  background-color: var(--scada-surface) !important;
+  color: var(--scada-text) !important;
+  border-bottom: 1px solid var(--scada-border) !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 18px !important;
+  transition: all var(--transition-fast);
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: var(--scada-card) !important;
+  color: var(--status-normal) !important;
+}
+
+.leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
+
+/* Popup styling */
+.leaflet-popup-content-wrapper {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  min-width: 200px;
+}
+
+.leaflet-popup-tip-container {
+  display: none !important;
+}
+
+.leaflet-popup-close-button {
+  color: var(--scada-muted) !important;
+  font-size: 20px !important;
+  padding: 10px !important;
+  width: 32px !important;
+  height: 32px !important;
+  transition: color var(--transition-fast);
+}
+
+.leaflet-popup-close-button:hover {
+  color: var(--scada-text) !important;
+}
+
+/* Train marker styling */
+.train-marker {
+  background: transparent !important;
+  border: none !important;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+  transition: transform var(--transition-spring);
+}
+
+.train-marker:hover {
+  transform: scale(1.1);
+}
+
+/* ============================================================================
+   Custom Scrollbar - Enterprise Style
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scada-border);
+  border-radius: 3px;
+  transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scada-muted);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scada-border) transparent;
+}
+
+/* ============================================================================
+   Utility Classes - Enhanced
+   ============================================================================ */
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--scada-border-subtle);
+}
+
+.glass-strong {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--scada-border);
+}
+
+/* Neon glow effects */
+.glow-green {
+  box-shadow: 0 0 10px var(--status-normal), 0 0 30px var(--status-normal-glow);
+}
+
+.glow-amber {
+  box-shadow: 0 0 10px var(--status-warning), 0 0 30px var(--status-warning-glow);
+}
+
+.glow-purple {
+  box-shadow: 0 0 10px var(--status-tunnel), 0 0 30px var(--status-tunnel-glow);
+}
+
+.glow-red {
+  box-shadow: 0 0 10px var(--status-danger), 0 0 30px var(--status-danger-glow);
+}
+
+/* Text glow */
+.text-glow-green {
+  text-shadow: 0 0 10px var(--status-normal), 0 0 20px var(--status-normal-glow);
+}
+
+.text-glow-amber {
+  text-shadow: 0 0 10px var(--status-warning), 0 0 20px var(--status-warning-glow);
+}
+
+/* Status badge styles */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.status-badge-normal {
+  background: rgba(0, 255, 157, 0.1);
+  color: var(--status-normal);
+  border: 1px solid rgba(0, 255, 157, 0.2);
+}
+
+.status-badge-normal::before {
+  background: var(--status-normal);
+  box-shadow: 0 0 8px var(--status-normal);
+}
+
+.status-badge-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--status-warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.status-badge-warning::before {
+  background: var(--status-warning);
+  box-shadow: 0 0 8px var(--status-warning);
+}
+
+.status-badge-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--status-danger);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.status-badge-danger::before {
+  background: var(--status-danger);
+  box-shadow: 0 0 8px var(--status-danger);
+}
+
+.status-badge-tunnel {
+  background: rgba(168, 85, 247, 0.1);
+  color: var(--status-tunnel);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.status-badge-tunnel::before {
+  background: var(--status-tunnel);
+  box-shadow: 0 0 8px var(--status-tunnel);
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: all var(--transition-normal);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--scada-border);
+}
+
+/* Button styles */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, var(--status-info) 0%, #2563eb 100%);
+  color: white;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--scada-card);
+  color: var(--scada-text);
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid var(--scada-border);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background: var(--scada-card-hover);
+  border-color: var(--scada-muted);
+}
+
+/* Scanline effect for SCADA aesthetic */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    transparent 50%,
+    rgba(0, 0, 0, 0.03) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Grid background pattern */
+.grid-pattern {
+  background-image: 
+    linear-gradient(rgba(51, 65, 85, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51, 65, 85, 0.2) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Dot pattern background */
+.dot-pattern {
+  background-image: radial-gradient(rgba(51, 65, 85, 0.3) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* ============================================================================
+   Animation Keyframes
+   ============================================================================ */
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  50% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 15px currentColor);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes data-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes border-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Animation utility classes */
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+.animate-data-pulse {
+  animation: data-pulse 2s ease-in-out infinite;
+}
+
+/* Stagger animation delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* ============================================================================
+   Skeleton Shimmer Animation
+   ============================================================================ */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 41, 59, 0.5) 25%,
+    rgba(51, 65, 85, 0.5) 50%,
+    rgba(30, 41, 59, 0.5) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ============================================================================
+   Enterprise Component Styles
+   ============================================================================ */
+
+/* Alert panel enhancements */
+.alert-panel-enter {
+  animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.alert-panel-exit {
+  animation: slide-out-right 0.2s cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Data stream packet animation */
+@keyframes packet-flow {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+}
+
+.packet-indicator {
+  animation: packet-flow 0.5s ease-out;
+}
+
+/* Toast notification animations */
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+}
+
+.toast-enter {
+  animation: toast-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-exit {
+  animation: toast-exit 0.2s cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* Keyboard shortcut modal backdrop */
+.keyboard-shortcuts-backdrop {
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Enterprise card hover effects */
+.card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Status indicator pulse variants */
+.status-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.status-pulse-fast {
+  animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Gradient border effect */
+.gradient-border {
+  position: relative;
+  background: var(--scada-surface);
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--status-info) 0%,
+    var(--status-normal) 50%,
+    var(--status-info) 100%
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-flow 3s linear infinite;
+  background-size: 200% 200%;
+}
+
+/* Tooltip styles */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: 0.5rem 0.75rem;
+  background: var(--scada-card);
+  border: 1px solid var(--scada-border);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--scada-text);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 1000;
+  box-shadow: var(--shadow-lg);
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* Loading spinner variants */
+.spinner-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.spinner-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: spinner-dots 1.4s ease-in-out infinite both;
+}
+
+.spinner-dots span:nth-child(1) { animation-delay: -0.32s; }
+.spinner-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes spinner-dots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Scanline overlay for retro SCADA feel */
+.scanline-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  opacity: 0.5;
+}
+
+/* Corner accents for panels */
+.corner-accent {
+  position: relative;
+}
+
+.corner-accent::before,
+.corner-accent::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--status-info);
+  border-style: solid;
+  transition: all 0.3s ease;
+}
+
+.corner-accent::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.corner-accent::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+.corner-accent:hover::before,
+.corner-accent:hover::after {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================================================
+   Recharts Customization
+   ============================================================================ */
+
+.recharts-cartesian-axis-tick-value {
+  fill: var(--scada-muted) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 10px !important;
+}
+
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+.recharts-default-tooltip {
+  background-color: var(--scada-card) !important;
+  border: 1px solid var(--scada-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* ============================================================================
+   Focus and Accessibility
+   ============================================================================ */
+
+/* Focus visible styles */
+*:focus-visible {
+  outline: 2px solid var(--status-info);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--status-info);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --scada-border: #4a5568;
+    --scada-muted: #718096;
+  }
+}
+
+/* ============================================================================
+   Print Styles
+   ============================================================================ */
+
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}

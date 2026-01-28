@@ -1,0 +1,15 @@
+# Core Framework
+fastapi
+uvicorn[standard]
+
+# Data Validation
+pydantic
+
+# Server-Sent Events
+sse-starlette
+
+# CORS Support
+python-multipart
+
+# Utilities
+python-dateutil
