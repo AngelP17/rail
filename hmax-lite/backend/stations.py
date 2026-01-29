@@ -447,23 +447,34 @@ TUNNEL_ENTRY_STATION = "ST-02"  # Balboa
 TUNNEL_EXIT_STATION = "ST-03"   # Panama Pacifico
 
 
-def is_in_tunnel_section(current_station_idx: int, progress: float, line: MetroLine = MetroLine.LINE_3) -> bool:
+def is_in_tunnel_section(current_station_idx: int, progress: float, line: MetroLine = MetroLine.LINE_3, direction: int = 1) -> bool:
     """
     Check if a train is in the tunnel section.
     
     The tunnel runs between Balboa (ST-02, index 1) and Panama Pacifico (ST-03, index 2).
-    A train is in the tunnel if:
-    - It's at station index 1 heading to index 2 (any progress > 0)
-    - It's at station index 2 heading to index 1 (any progress > 0)
+    A train is in the tunnel if it's traveling between these two stations in either direction.
+    
+    Args:
+        current_station_idx: Index of the station the train departed from
+        progress: Progress between current and next station (0.0 to 1.0)
+        line: Metro line (only LINE_3 has a tunnel)
+        direction: Travel direction (1 = forward/westbound, -1 = reverse/eastbound)
+    
+    Returns:
+        True if the train is currently in the tunnel section
     """
     if line != MetroLine.LINE_3:
         return False
         
-    tunnel_entry_idx = get_station_index(TUNNEL_ENTRY_STATION, line)  # 1
-    tunnel_exit_idx = get_station_index(TUNNEL_EXIT_STATION, line)    # 2
+    tunnel_entry_idx = get_station_index(TUNNEL_ENTRY_STATION, line)  # 1 (Balboa)
+    tunnel_exit_idx = get_station_index(TUNNEL_EXIT_STATION, line)    # 2 (Panama Pacifico)
     
-    # Train is between Balboa and Panama Pacifico
-    if current_station_idx == tunnel_entry_idx and progress > 0:
+    # Train is traveling Balboa (1) -> Panama Pacifico (2) (westbound, direction=1)
+    if current_station_idx == tunnel_entry_idx and direction == 1 and progress > 0:
+        return True
+    
+    # Train is traveling Panama Pacifico (2) -> Balboa (1) (eastbound, direction=-1)
+    if current_station_idx == tunnel_exit_idx and direction == -1 and progress > 0:
         return True
     
     return False

@@ -313,7 +313,12 @@ class LineSimulator:
         # Check tunnel status (only for Line 3)
         in_tunnel = False
         if self.line == MetroLine.LINE_3:
-            in_tunnel = is_in_tunnel_section(train.current_station_idx, train.progress)
+            in_tunnel = is_in_tunnel_section(
+                train.current_station_idx, 
+                train.progress, 
+                self.line,
+                train.direction
+            )
         
         # Determine if braking
         is_braking = train.progress > BRAKE_START_PROGRESS and not train.at_station
