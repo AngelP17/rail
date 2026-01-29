@@ -15,10 +15,12 @@ Endpoints:
 """
 
 import asyncio
-import json
+import logging
 import os
 from datetime import datetime
 from typing import AsyncGenerator
+
+import orjson
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -243,34 +245,38 @@ async def get_all_stations():
 # Server-Sent Events Stream
 # =============================================================================
 
+logger = logging.getLogger(__name__)
+
+
 async def generate_telemetry_stream() -> AsyncGenerator[str, None]:
     """Generate telemetry updates as Server-Sent Events."""
     simulator = get_simulator()
-    
+
     while True:
-        trains = simulator.get_all_trains()
-        
-        # Calculate system status
-        total_energy = sum(t.telemetry.energy_recovered_kwh for t in trains)
-        trains_in_tunnel = sum(1 for t in trains if t.is_in_tunnel)
-        
-        data = {
-            "trains": [t.model_dump() for t in trains],
-            "system_status": {
-                "active_trains": len(trains),
-                "total_energy_recovered_kwh": round(total_energy, 2),
-                "trains_in_tunnel": trains_in_tunnel,
-                "system_health": "NORMAL",
-                "timestamp": datetime.utcnow().isoformat(),
+        try:
+            # Run CPU-bound simulation in thread to avoid blocking the event loop
+            trains = await asyncio.to_thread(simulator.get_all_trains)
+
+            # Calculate system status
+            total_energy = sum(t.telemetry.energy_recovered_kwh for t in trains)
+            trains_in_tunnel = sum(1 for t in trains if t.is_in_tunnel)
+
+            data = {
+                "trains": [t.model_dump(mode="json") for t in trains],
+                "system_status": {
+                    "active_trains": len(trains),
+                    "total_energy_recovered_kwh": round(total_energy, 2),
+                    "trains_in_tunnel": trains_in_tunnel,
+                    "system_health": "NORMAL",
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
             }
-        }
-        
-        # Convert datetime objects for JSON serialization
-        for train in data["trains"]:
-            if isinstance(train.get("timestamp"), datetime):
-                train["timestamp"] = train["timestamp"].isoformat()
-        
-        yield json.dumps(data)
+
+            yield orjson.dumps(data).decode()
+        except Exception:
+            logger.exception("Error generating telemetry frame")
+            yield "{}"
+
         await asyncio.sleep(1)  # Update every second
 
 

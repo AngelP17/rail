@@ -11,5 +11,8 @@ sse-starlette
 # CORS Support
 python-multipart
 
+# Fast JSON serialization
+orjson
+
 # Utilities
 python-dateutil

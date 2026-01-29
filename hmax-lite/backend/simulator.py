@@ -83,7 +83,20 @@ class LineSimulator:
         self.num_trains = num_trains
         self.stations = LINE_METADATA[line.value]["stations"]
         self.trains: List[TrainState] = []
+        self._distance_cache: Dict[Tuple[int, int], float] = {}
+        self._precompute_distances()
         self._initialize_trains()
+
+    def _precompute_distances(self) -> None:
+        """Pre-compute and cache all inter-station distances."""
+        for i in range(len(self.stations)):
+            for j in range(len(self.stations)):
+                if i != j:
+                    s1 = self.stations[i]
+                    s2 = self.stations[j]
+                    self._distance_cache[(i, j)] = self._calculate_distance(
+                        s1.lat, s1.lng, s2.lat, s2.lng
+                    )
 
     def _initialize_trains(self) -> None:
         """Initialize trains at distributed positions along the route."""
@@ -209,12 +222,9 @@ class LineSimulator:
             train.direction = 1
             next_station_idx = train.current_station_idx + 1
         
-        # Get segment distance
-        from_station = self.stations[train.current_station_idx]
-        to_station = self.stations[next_station_idx]
-        segment_distance_km = self._calculate_distance(
-            from_station.lat, from_station.lng,
-            to_station.lat, to_station.lng
+        # Get segment distance (cached)
+        segment_distance_km = self._distance_cache.get(
+            (train.current_station_idx, next_station_idx), 0.1
         )
         
         # Calculate target speed and smoothly approach it
