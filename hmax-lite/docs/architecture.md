@@ -6,55 +6,36 @@ HMAX-Lite is a real-time Digital Twin simulation for the Panama Metro Line 3 mon
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              HMAX-Lite Architecture                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                         Browser (Client)                              │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │   │
-│  │  │   Map View   │  │  Train List  │  │   Telemetry Sidebar      │  │   │
-│  │  │   (Leaflet)  │  │              │  │   - Speed Gauge          │  │   │
-│  │  │              │  │   5 Active   │  │   - Energy Chart         │  │   │
-│  │  │  • Route     │  │   Trains     │  │   - Temp Gauge           │  │   │
-│  │  │  • Stations  │  │              │  │   - Route Info           │  │   │
-│  │  │  • Trains    │  │              │  │                          │  │   │
-│  │  └──────────────┘  └──────────────┘  └──────────────────────────┘  │   │
-│  │                                                                      │   │
-│  │                  React 18 + TypeScript + Tailwind CSS                │   │
-│  │                          TanStack Query (Polling)                    │   │
-│  └───────────────────────────────┬─────────────────────────────────────┘   │
-│                                  │ HTTP/SSE                                 │
-│                                  │ (1s polling)                             │
-│  ┌───────────────────────────────▼─────────────────────────────────────┐   │
-│  │                         Backend (FastAPI)                            │   │
-│  │                                                                      │   │
-│  │  ┌──────────────────────────────────────────────────────────────┐  │   │
-│  │  │                   Train Simulator Engine                       │  │   │
-│  │  │                                                                │  │   │
-│  │  │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  │  │   │
-│  │  │  │ Physics Model  │  │ Telemetry Gen  │  │   Geofencing   │  │  │   │
-│  │  │  │                │  │                │  │                │  │  │   │
-│  │  │  │ • Haversine    │  │ • Speed        │  │ • Tunnel       │  │  │   │
-│  │  │  │ • Interpolate  │  │ • B-CHOP       │  │ • Comms Mode   │  │  │   │
-│  │  │  │ • Accel/Decel  │  │ • Energy       │  │ • Boundaries   │  │  │   │
-│  │  │  └────────────────┘  └────────────────┘  └────────────────┘  │  │   │
-│  │  │                                                                │  │   │
-│  │  │  Station Data: 11 stations from Albrook to Ciudad del Futuro   │  │   │
-│  │  └──────────────────────────────────────────────────────────────┘  │   │
-│  │                                                                      │   │
-│  │  Endpoints:                                                          │   │
-│  │  • GET  /api/trains     → All train statuses                        │   │
-│  │  • GET  /api/trains/:id → Single train                              │   │
-│  │  • GET  /api/stations   → Route data                                │   │
-│  │  • GET  /api/stream     → SSE telemetry stream                      │   │
-│  │                                                                      │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                                                              │
-│                            Docker Compose                                    │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Docker["🐳 Docker Compose Environment"]
+        subgraph Client["🌐 Browser (Client)"]
+            subgraph UI["React 18 + TypeScript + Tailwind CSS"]
+                MV["🗺️ Map View (Leaflet)<br/>• Route • Stations • Trains"]
+                TL["🚇 Train List<br/>5 Active Trains"]
+                TS["📊 Telemetry Sidebar<br/>• Speed Gauge<br/>• Energy Chart<br/>• Temp Gauge"]
+            end
+            TQ["TanStack Query (Polling)"]
+        end
+        
+        Client -->|"HTTP/SSE (1s polling)"| Backend
+        
+        subgraph Backend["⚙️ Backend (FastAPI)"]
+            subgraph Engine["Train Simulator Engine"]
+                PM["📐 Physics Model<br/>• Haversine<br/>• Interpolate<br/>• Accel/Decel"]
+                TGN["📈 Telemetry Gen<br/>• Speed<br/>• B-CHOP<br/>• Energy"]
+                GF["📍 Geofencing<br/>• Tunnel<br/>• Comms Mode<br/>• Boundaries"]
+            end
+            SD["🚉 Station Data: 11 stations from Albrook to Ciudad del Futuro"]
+            EP["API Endpoints:<br/>GET /api/trains<br/>GET /api/trains/:id<br/>GET /api/stations<br/>GET /api/stream"]
+        end
+    end
+    
+    style Docker fill:#1a1a2e,stroke:#16213e,color:#fff
+    style Client fill:#162447,stroke:#00d9ff,color:#fff
+    style Backend fill:#0f3460,stroke:#e94560,color:#fff
+    style Engine fill:#1f4068,stroke:#1b1b2f,color:#fff
+    style UI fill:#1f4068,stroke:#00d9ff,color:#fff
 ```
 
 ## Component Details
@@ -75,17 +56,13 @@ The physics engine simulates realistic train behavior:
 - Heading calculated from movement direction
 
 **Speed Profile (Trapezoidal Velocity):**
-```
-Speed
-  ^
-  │    ┌─────────────────┐
-  │   /│   CRUISE @80    │
-80│  / │                 │\
-  │ /  │                 │ \
-  │/   │                 │  \
-0 └────┴─────────────────┴────►
-  0%  25%               75%  100%
-       Station Progress
+
+```mermaid
+xychart-beta
+    title "Trapezoidal Velocity Profile"
+    x-axis "Station Progress %" [0, 25, 50, 75, 100]
+    y-axis "Speed (km/h)" 0 --> 90
+    line [0, 80, 80, 80, 0]
 ```
 
 - 0-25%: Acceleration phase
@@ -117,21 +94,29 @@ Speed
 - **Tailwind CSS 3.4** for styling
 
 **Component Hierarchy:**
-```
-App
-├── QueryClientProvider
-└── Dashboard
-    ├── Header (system status)
-    ├── TrainList (left sidebar)
-    ├── Map (center)
-    │   ├── TileLayer (CartoDB Dark Matter)
-    │   ├── Polyline (route)
-    │   ├── CircleMarker[] (stations)
-    │   └── TrainMarker[] (trains)
-    └── TelemetrySidebar (right)
-        ├── SpeedGauge
-        ├── EnergyChart
-        └── TempGauge
+
+```mermaid
+flowchart TB
+    App --> QCP[QueryClientProvider]
+    QCP --> Dashboard
+    Dashboard --> Header["Header (system status)"]
+    Dashboard --> TrainList["TrainList (left sidebar)"]
+    Dashboard --> Map["Map (center)"]
+    Dashboard --> Telemetry["TelemetrySidebar (right)"]
+    
+    Map --> TileLayer["TileLayer (CartoDB Dark Matter)"]
+    Map --> Polyline["Polyline (route)"]
+    Map --> CircleMarker["CircleMarker[] (stations)"]
+    Map --> TrainMarker["TrainMarker[] (trains)"]
+    
+    Telemetry --> SpeedGauge
+    Telemetry --> EnergyChart
+    Telemetry --> TempGauge
+    
+    style App fill:#1a1a2e,stroke:#e94560,color:#fff
+    style Dashboard fill:#162447,stroke:#00d9ff,color:#fff
+    style Map fill:#0f3460,stroke:#22c55e,color:#fff
+    style Telemetry fill:#0f3460,stroke:#3b82f6,color:#fff
 ```
 
 **Data Flow:**
