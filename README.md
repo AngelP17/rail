@@ -28,26 +28,56 @@ This project serves as a "Digital Twin" proof-of-concept for the **Hitachi Rail 
 
 ```mermaid
 flowchart TB
-    subgraph Docker["🐳 Docker Compose"]
+    subgraph Docker["Docker Compose"]
         subgraph Backend["Train Simulator (FastAPI)"]
-            PE[🔧 Physics Engine]
-            TG[📊 Telemetry Generator]
-            GF[📍 Geofencing]
-            ML[🚇 Multi-Line Support]
+            PE["Physics Engine"]
+            TG["Telemetry Generator"]
+            GF["Geofencing / Tunnel"]
+            ML["Multi-Line: 13 trains across 3 lines"]
         end
         
         subgraph Frontend["Operations Dashboard (React + TypeScript)"]
-            LM[🗺️ Leaflet Map<br/>3 Lines]
-            TS[📈 Telemetry Sidebar<br/>Line Selector]
+            HD["Header: System Status + Line Selector"]
+            LM["Leaflet Map: 3 Lines + 39 Stations"]
+            TL["Train List: Grouped by Line"]
+            TS["Telemetry Sidebar: Gauges + Charts"]
+            MD["Mock Data Layer: Offline Support"]
         end
         
-        Backend -->|"SSE Stream"| Frontend
+        Backend -->|"REST API / SSE"| Frontend
+        MD -.->|"Fallback when offline"| Frontend
     end
     
     style Docker fill:#1a1a2e,stroke:#16213e,color:#fff
     style Backend fill:#0f3460,stroke:#e94560,color:#fff
     style Frontend fill:#0f3460,stroke:#00d9ff,color:#fff
 ```
+
+### Dashboard Screenshots
+
+<p align="center">
+  <img src="docs/dashboard-full.png" alt="Full Dashboard - All Lines" width="800"/>
+</p>
+
+<p align="center">
+  <em>Full dashboard with 13 active trains across Lines 1, 2, and 3</em>
+</p>
+
+<p align="center">
+  <img src="docs/dashboard-telemetry.png" alt="Train Telemetry View" width="800"/>
+</p>
+
+<p align="center">
+  <em>Train telemetry with speed gauge, energy chart, and route progress</em>
+</p>
+
+<p align="center">
+  <img src="docs/dashboard-line3.png" alt="Line 3 View" width="800"/>
+</p>
+
+<p align="center">
+  <em>Line 3 filtered view showing tunnel detection and monorail fleet</em>
+</p>
 
 ---
 
@@ -213,23 +243,29 @@ hmax-lite/
 │   ├── vite.config.ts
 │   ├── tailwind.config.js
 │   └── src/
-│       ├── App.tsx
+│       ├── App.tsx               # Main dashboard layout
 │       ├── components/
-│       │   ├── Header.tsx         # Line selector & status
-│       │   ├── Map.tsx            # Multi-line map
-│       │   ├── TrainMarker.tsx    # Line-colored train icons
-│       │   ├── TrainList.tsx      # Grouped by line
-│       │   ├── TelemetrySidebar.tsx
-│       │   ├── SpeedGauge.tsx
-│       │   └── EnergyChart.tsx
+│       │   ├── Header.tsx         # Line selector & system status
+│       │   ├── Map.tsx            # Multi-line Leaflet map
+│       │   ├── TrainMarker.tsx    # Line-colored train SVG icons
+│       │   ├── TrainList.tsx      # Fleet list grouped by line
+│       │   ├── TelemetrySidebar.tsx # Full telemetry panel
+│       │   ├── SpeedGauge.tsx     # SVG circular gauge
+│       │   ├── EnergyChart.tsx    # Recharts area chart + temp gauge
+│       │   ├── MetricsCard.tsx    # Reusable metric with sparkline
+│       │   └── PageTransition.tsx # Animation wrappers
 │       ├── hooks/
-│       │   └── useTrains.ts       # Line filtering logic
+│       │   └── useTrains.ts       # Data fetching + mock fallback
 │       ├── types/
 │       │   └── train.ts           # MetroLine types & config
 │       └── utils/
-│           └── api.ts             # API client
+│           ├── api.ts             # API client with mock fallback
+│           └── mockData.ts        # Realistic mock telemetry data
 └── docs/
-    └── architecture.md
+    ├── architecture.md
+    ├── dashboard-full.png
+    ├── dashboard-telemetry.png
+    └── dashboard-line3.png
 ```
 
 ---

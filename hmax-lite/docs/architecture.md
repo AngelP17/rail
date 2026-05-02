@@ -2,32 +2,36 @@
 
 ## System Overview
 
-HMAX-Lite is a real-time Digital Twin simulation for the Panama Metro Line 3 monorail system. It demonstrates SCADA-style monitoring capabilities for transit operations.
+HMAX-Lite is a real-time Digital Twin simulation for the Panama Metro system covering Lines 1, 2, and 3. It demonstrates SCADA-style monitoring capabilities for transit operations with 13 trains across 39 stations.
 
 ## Architecture Diagram
 
 ```mermaid
 flowchart TB
-    subgraph Docker["🐳 Docker Compose Environment"]
-        subgraph Client["🌐 Browser (Client)"]
+    subgraph Docker["Docker Compose Environment"]
+        subgraph Client["Browser (Client)"]
             subgraph UI["React 18 + TypeScript + Tailwind CSS"]
-                MV["🗺️ Map View (Leaflet)<br/>• Route • Stations • Trains"]
-                TL["🚇 Train List<br/>5 Active Trains"]
-                TS["📊 Telemetry Sidebar<br/>• Speed Gauge<br/>• Energy Chart<br/>• Temp Gauge"]
+                HD["Header: System Status + Line Selector"]
+                MV["Map View: Leaflet - 3 Lines, 39 Stations, 13 Trains"]
+                TL["Train List: Grouped by Line with Status"]
+                TS["Telemetry Sidebar: Speed Gauge, Energy Chart, Temp Gauge, Route Progress"]
             end
-            TQ["TanStack Query (Polling)"]
+            TQ["TanStack Query (1s polling)"]
+            MD["Mock Data Layer: Realistic offline telemetry"]
         end
         
         Client -->|"HTTP/SSE (1s polling)"| Backend
+        MD -.->|"Fallback when API offline"| Client
         
-        subgraph Backend["⚙️ Backend (FastAPI)"]
+        subgraph Backend["Backend (FastAPI)"]
             subgraph Engine["Train Simulator Engine"]
-                PM["📐 Physics Model<br/>• Haversine<br/>• Interpolate<br/>• Accel/Decel"]
-                TGN["📈 Telemetry Gen<br/>• Speed<br/>• B-CHOP<br/>• Energy"]
-                GF["📍 Geofencing<br/>• Tunnel<br/>• Comms Mode<br/>• Boundaries"]
+                PM["Physics Model: Haversine, Interpolation, Accel/Decel"]
+                TGN["Telemetry Gen: Speed, B-CHOP, Energy, Temp"]
+                GF["Geofencing: Tunnel Detection, Comms Mode"]
+                ML["Multi-Line: Line 1 (4 trains), Line 2 (4 trains), Line 3 (5 trains)"]
             end
-            SD["🚉 Station Data: 11 stations from Albrook to Ciudad del Futuro"]
-            EP["API Endpoints:<br/>GET /api/trains<br/>GET /api/trains/:id<br/>GET /api/stations<br/>GET /api/stream"]
+            SD["Station Data: 39 stations across 3 lines"]
+            EP["API: /api/trains, /api/stations, /api/stream"]
         end
     end
     
@@ -99,19 +103,22 @@ xychart-beta
 flowchart TB
     App --> QCP[QueryClientProvider]
     QCP --> Dashboard
-    Dashboard --> Header["Header (system status)"]
-    Dashboard --> TrainList["TrainList (left sidebar)"]
-    Dashboard --> Map["Map (center)"]
-    Dashboard --> Telemetry["TelemetrySidebar (right)"]
+    Dashboard --> Header["Header: System Status + Line Selector"]
+    Dashboard --> TrainList["TrainList: Left sidebar, grouped by line"]
+    Dashboard --> Map["Map: Center, Leaflet with 3 routes"]
+    Dashboard --> Telemetry["TelemetrySidebar: Right panel"]
     
-    Map --> TileLayer["TileLayer (CartoDB Dark Matter)"]
-    Map --> Polyline["Polyline (route)"]
-    Map --> CircleMarker["CircleMarker[] (stations)"]
-    Map --> TrainMarker["TrainMarker[] (trains)"]
+    Map --> TileLayer["TileLayer: CartoDB Dark Matter"]
+    Map --> Polyline["Polyline: 3 route lines + tunnel"]
+    Map --> CircleMarker["CircleMarker: 39 stations"]
+    Map --> TrainMarker["TrainMarker: 13 trains with SVG icons"]
     
-    Telemetry --> SpeedGauge
-    Telemetry --> EnergyChart
-    Telemetry --> TempGauge
+    Telemetry --> StatusBanner["Status Banner: Normal/Braking/Tunnel/Station"]
+    Telemetry --> SpeedGauge["Speed Gauge: SVG circular 0-100 km/h"]
+    Telemetry --> BChopPanel["B-CHOP Panel: Energy chart + stats"]
+    Telemetry --> TempGauge["Temp Gauge: Brake system 40-90 C"]
+    Telemetry --> RouteInfo["Route Info: Progress bar + ETA"]
+    Telemetry --> AdditionalInfo["Additional Info: Direction, Mode, Doors, Motor"]
     
     style App fill:#1a1a2e,stroke:#e94560,color:#fff
     style Dashboard fill:#162447,stroke:#00d9ff,color:#fff
@@ -121,9 +128,11 @@ flowchart TB
 
 **Data Flow:**
 1. `useTrains` hook polls `/api/trains` every 1 second
-2. Train positions update on map
-3. Selected train telemetry displays in sidebar
-4. History accumulated for charts (60 data points max)
+2. If API unavailable, mock data layer generates realistic telemetry automatically
+3. Train positions update on map with animated SVG markers
+4. Selected train telemetry displays in sidebar with speed gauge, energy chart, route progress
+5. History accumulated for charts (60 data points max per train)
+6. Line selector filters all views: map, fleet list, and system metrics
 
 ## Key Engineering Decisions
 
