@@ -78,9 +78,9 @@ export function formatEta(seconds: number): string {
 }
 
 export function getStatusColor(isInTunnel: boolean, isBraking: boolean): string {
-  if (isInTunnel) return '#a855f7';
-  if (isBraking) return '#f59e0b';
-  return '#00ff9d';
+  if (isInTunnel) return '#22d3ee';
+  if (isBraking) return '#fbbf24';
+  return '#34d399';
 }
 
 export function formatSpeed(kmh: number): string {

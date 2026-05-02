@@ -153,7 +153,7 @@ export function MetricsCard({
       {/* Value */}
       <div className="flex items-baseline gap-1 mb-3">
         <span 
-          className={`${config.valueSize} font-display font-bold tabular-nums`}
+          className={`${config.valueSize} font-mono font-bold tabular-nums`}
           style={{ color: statusColor }}
         >
           {formattedValue}

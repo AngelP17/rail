@@ -1,12 +1,3 @@
-/**
- * HMAX-Lite: Train List Component - Enterprise Edition
- * ====================================================
- * 
- * Compact list of all active trains with real-time status indicators.
- * Enhanced with enterprise-level styling, animations, and interactions.
- */
-
-import { Train, ChevronRight, Radio, MapPin, Zap, Mountain } from 'lucide-react';
 import type { TrainStatus, MetroLine } from '../types/train';
 import { formatSpeed, getStatusColor } from '../utils/api';
 import { LINE_CONFIG } from '../types/train';
@@ -18,221 +9,211 @@ interface TrainListProps {
   selectedLine: MetroLine | 'all';
 }
 
-export function TrainList({ trains, selectedTrainId, onSelectTrain, selectedLine }: TrainListProps) {
-  const getStatusBadge = (train: TrainStatus) => {
-    if (train.is_in_tunnel) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-status-tunnel/10 text-status-tunnel border border-status-tunnel/20">
-          <Mountain className="w-3 h-3" />
-          TUNNEL
-        </span>
-      );
-    }
-    if (train.telemetry.b_chop_status) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-status-warning/10 text-status-warning border border-status-warning/20">
-          <Zap className="w-3 h-3" />
-          BRAKING
-        </span>
-      );
-    }
-    if (train.at_station) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-status-info/10 text-status-info border border-status-info/20">
-          <MapPin className="w-3 h-3" />
-          STATION
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-status-normal/10 text-status-normal border border-status-normal/20">
-        <Radio className="w-3 h-3" />
-        ACTIVE
-      </span>
-    );
-  };
+function statusLabel(train: TrainStatus): { text: string; color: string } {
+  if (train.is_in_tunnel) return { text: 'TUNNEL', color: '#22d3ee' };
+  if (train.telemetry.b_chop_status) return { text: 'BRAKING', color: '#fbbf24' };
+  if (train.at_station) return { text: 'STATION', color: '#60a5fa' };
+  return { text: 'MOVING', color: '#34d399' };
+}
 
-  // Group trains by line
+function isActive(train: TrainStatus) {
+  return !train.is_in_tunnel && !train.telemetry.b_chop_status && !train.at_station;
+}
+
+export function TrainList({ trains, selectedTrainId, onSelectTrain, selectedLine }: TrainListProps) {
   const trainsByLine: Record<MetroLine, TrainStatus[]> = {
     line1: trains.filter(t => t.line === 'line1'),
     line2: trains.filter(t => t.line === 'line2'),
     line3: trains.filter(t => t.line === 'line3'),
   };
 
-  const linesToShow: (MetroLine | 'all')[] = selectedLine === 'all' 
-    ? ['line1', 'line2', 'line3'] 
+  const linesToShow: MetroLine[] = selectedLine === 'all'
+    ? ['line1', 'line2', 'line3']
     : [selectedLine];
 
+  let globalIndex = 0;
+  const movingCount = trains.filter(isActive).length;
+  const brakingCount = trains.filter(t => t.telemetry.b_chop_status).length;
+  const tunnelCount = trains.filter(t => t.is_in_tunnel).length;
+
   return (
-    <div className="bg-scada-surface border-r border-scada-border/50 h-full flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-scada-border/50 bg-scada-surface/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-scada-card rounded-md">
-              <Train className="w-4 h-4 text-scada-muted" />
-            </div>
-            <span className="font-mono text-xs text-scada-muted uppercase tracking-wider">Fleet Status</span>
+    <div className="relative h-full overflow-hidden bg-[#08101d]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(96,165,250,0.14),transparent_34%),radial-gradient(circle_at_90%_10%,rgba(52,211,153,0.12),transparent_28%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.1] [background-image:linear-gradient(rgba(255,255,255,0.8)_1px,transparent_1px)] [background-size:100%_56px]" />
+      <div className="relative h-full flex flex-col">
+      {/* Panel header */}
+      <div className="border-b border-white/10 px-5 py-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="font-mono text-[10px] uppercase tracking-[0.34em] text-white/42">Fleet rail</span>
+            <p className="mt-2 text-3xl font-black tracking-[-0.06em] text-white">{trains.length}</p>
           </div>
-          <span className="text-xs font-mono text-scada-muted bg-scada-card px-2 py-0.5 rounded">
-            {trains.length} ACTIVE
+          <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-white/60">
+            {selectedLine === 'all' ? 'Network' : LINE_CONFIG[selectedLine].label}
           </span>
+        </div>
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          {[
+            { label: 'Moving', value: movingCount, color: '#34d399' },
+            { label: 'Brake', value: brakingCount, color: '#fbbf24' },
+            { label: 'Tunnel', value: tunnelCount, color: '#22d3ee' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.055] p-3">
+              <div className="mb-2 h-1 w-6 rounded-full" style={{ backgroundColor: color }} />
+              <p className="font-mono text-lg font-black text-white">{value}</p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/38">{label}</p>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Train list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-3 py-4">
         {trains.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-scada-card flex items-center justify-center">
-              <Train className="w-6 h-6 text-scada-muted" />
+          <div className="flex flex-col items-start justify-center h-full gap-3 px-5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/12 bg-white/8">
+              <div className="h-4 w-4 rounded bg-white/20" />
             </div>
-            <p className="text-sm text-scada-muted">No active trains</p>
+            <p className="font-mono text-xs text-white/50">No active trains</p>
           </div>
         ) : (
-          <div className="divide-y divide-scada-border/30">
+          <>
             {linesToShow.map((line) => {
-              const lineTrains = line === 'all' ? [] : trainsByLine[line];
-              if (line === 'all' || lineTrains.length === 0) return null;
-              
+              const lineTrains = trainsByLine[line];
+              if (!lineTrains.length) return null;
               return (
-                <div key={line} className="py-2">
-                  {/* Line header */}
-                  <div 
-                    className="px-3 py-2 flex items-center gap-2"
-                    style={{ backgroundColor: `${LINE_CONFIG[line].color}10` }}
-                  >
-                    <div 
-                      className="w-2 h-2 rounded-full"
+                <div key={line}>
+                  {/* Line heading */}
+                  <div className="px-2 pb-3 pt-4 flex items-center gap-2">
+                    <span
+                      className="block h-2 w-8 rounded-full flex-shrink-0"
                       style={{ backgroundColor: LINE_CONFIG[line].color }}
                     />
-                    <span 
-                      className="text-xs font-mono font-semibold uppercase"
-                      style={{ color: LINE_CONFIG[line].color }}
-                    >
+                    <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/42">
                       {LINE_CONFIG[line].label}
                     </span>
-                    <span className="text-[10px] text-scada-muted">
-                      ({lineTrains.length})
+                    <span className="ml-auto rounded-full bg-white/8 px-2 py-0.5 font-mono text-[10px] text-white/50">
+                      {lineTrains.length}
                     </span>
                   </div>
-                  
-                  {/* Trains for this line */}
-                  {lineTrains.map((train, index) => {
-                    const statusColor = getStatusColor(train.is_in_tunnel, train.telemetry.b_chop_status);
-                    const isSelected = train.id === selectedTrainId;
 
-                    return (
-                      <button
-                        key={train.id}
-                        onClick={() => onSelectTrain(train.id)}
-                        className={`w-full p-3 transition-all duration-200 group ${
-                          isSelected
-                            ? 'bg-scada-card border-l-2 border-l-status-info'
-                            : 'hover:bg-scada-card/50 border-l-2 border-l-transparent'
-                        }`}
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <div className="flex items-start gap-3">
-                          {/* Status indicator */}
-                          <div className="flex flex-col items-center gap-1 pt-1">
-                            <div
-                              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                                isSelected ? 'scale-110' : ''
-                              }`}
-                              style={{
-                                backgroundColor: statusColor,
-                                boxShadow: `0 0 ${isSelected ? '12px' : '6px'} ${statusColor}50`,
-                              }}
-                            />
-                            {/* Connection line to next train */}
-                            {index < lineTrains.length - 1 && (
-                              <div className="w-px h-8 bg-scada-border/30" />
-                            )}
-                          </div>
+                  {/* Trains — divide-y, stagger animated */}
+                  <div className="space-y-2">
+                    {lineTrains.map((train) => {
+                      const itemIndex = globalIndex++;
+                      const isSelected = train.id === selectedTrainId;
+                      const dotColor = getStatusColor(train.is_in_tunnel, train.telemetry.b_chop_status);
+                      const status = statusLabel(train);
+                      const moving = isActive(train);
 
-                          {/* Train info */}
-                          <div className="flex-1 text-left min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono text-sm font-semibold text-white">
-                                {train.id}
-                              </span>
-                              {getStatusBadge(train)}
-                            </div>
-                            
-                            <p className="text-xs text-scada-muted truncate mb-2">
-                              {train.name}
-                            </p>
+                      return (
+                        <button
+                          key={train.id}
+                          onClick={() => onSelectTrain(train.id)}
+                          className={`group relative w-full overflow-hidden rounded-2xl border p-4 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] train-item-enter ${
+                            isSelected
+                              ? 'border-white/22 bg-white text-black shadow-[0_18px_50px_rgba(0,0,0,0.32)]'
+                              : 'border-white/8 bg-white/[0.045] text-white hover:border-white/16 hover:bg-white/[0.075]'
+                          }`}
+                          style={{ animationDelay: `${itemIndex * 55}ms` }}
+                        >
+                          {/* Left accent — selected */}
+                          <span
+                            className="absolute left-0 top-0 bottom-0 transition-all duration-300"
+                            style={{
+                              width: isSelected ? '5px' : '0px',
+                              backgroundColor: LINE_CONFIG[line].color,
+                              opacity: isSelected ? 1 : 0,
+                            }}
+                          />
 
-                            {/* Speed and destination */}
-                            <div className="flex items-center gap-3 text-xs">
-                              <div className="flex items-center gap-1">
-                                <Radio className="w-3 h-3 text-scada-muted" />
-                                <span className="font-mono text-scada-text-secondary">
-                                  {formatSpeed(train.telemetry.speed_kmh)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 min-w-0">
-                                <MapPin className="w-3 h-3 text-scada-muted flex-shrink-0" />
-                                <span className="font-mono text-scada-text-secondary truncate">
-                                  {train.position.next_station_id}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Progress bar */}
-                            <div className="mt-2 h-1 bg-scada-border/30 rounded-full overflow-hidden">
+                          <div className="flex items-start gap-3">
+                            {/* Status dot — animated ring for moving trains */}
+                            <div className="pt-1 flex-shrink-0 relative">
+                              {moving && (
+                                <span
+                                  className="absolute inset-0 rounded-full animate-ping"
+                                  style={{
+                                    backgroundColor: dotColor,
+                                    opacity: 0.3,
+                                    width: '10px',
+                                    height: '10px',
+                                  }}
+                                />
+                              )}
                               <div
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{
-                                  width: `${train.position.progress * 100}%`,
-                                  backgroundColor: statusColor,
-                                  boxShadow: `0 0 4px ${statusColor}`,
-                                }}
+                                className="w-2.5 h-2.5 rounded-full relative"
+                                style={{ backgroundColor: dotColor }}
                               />
                             </div>
-                          </div>
 
-                          {/* Selection indicator */}
-                          <ChevronRight
-                            className={`w-4 h-4 flex-shrink-0 transition-all duration-200 ${
-                              isSelected 
-                                ? 'text-status-info translate-x-0.5' 
-                                : 'text-scada-muted opacity-0 group-hover:opacity-100'
-                            }`}
-                          />
-                        </div>
-                      </button>
-                    );
-                  })}
+                            <div className="flex-1 min-w-0">
+                              {/* ID + status */}
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <span className={`font-mono text-sm font-black tracking-[-0.04em] truncate transition-colors duration-150 ${
+                                  isSelected ? 'text-black' : 'text-white/78 group-hover:text-white'
+                                }`}>
+                                  {train.id}
+                                </span>
+                                <span
+                                  className="rounded-full border px-2 py-0.5 font-mono text-[9px] tracking-[0.16em] uppercase flex-shrink-0 font-semibold"
+                                  style={{
+                                    color: status.color,
+                                    borderColor: `${status.color}55`,
+                                    backgroundColor: `${status.color}14`,
+                                  }}
+                                >
+                                  {status.text}
+                                </span>
+                              </div>
+
+                              {/* Speed + next station */}
+                              <div className={`flex items-center gap-2 text-[11px] font-mono ${isSelected ? 'text-black/55' : 'text-white/40'}`}>
+                                <span className="tabular-nums font-medium">{formatSpeed(train.telemetry.speed_kmh)}</span>
+                                <span>·</span>
+                                <span className="truncate">{train.position.next_station_id}</span>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className={`mt-3 h-1 rounded-full overflow-hidden ${isSelected ? 'bg-black/10' : 'bg-white/10'}`}>
+                                <div
+                                  className="h-full rounded-full transition-all duration-700"
+                                  style={{
+                                    width: `${train.position.progress * 100}%`,
+                                    backgroundColor: dotColor,
+                                    opacity: 0.7,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
-          </div>
+          </>
         )}
       </div>
 
-      {/* Legend */}
-      <div className="p-3 border-t border-scada-border/50 bg-scada-surface/50">
-        <span className="text-[10px] text-scada-muted font-mono block mb-2 uppercase tracking-wider">Legend</span>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-status-normal shadow-[0_0_6px_rgba(0,255,157,0.5)]" />
-            <span className="text-scada-muted">Normal</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-status-warning shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
-            <span className="text-scada-muted">Braking</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-status-tunnel shadow-[0_0_6px_rgba(168,85,247,0.5)]" />
-            <span className="text-scada-muted">Tunnel</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="px-1 bg-status-info/20 text-status-info font-mono text-[10px] rounded">STA</span>
-            <span className="text-scada-muted">Station</span>
-          </div>
+      {/* Footer legend */}
+      <div className="border-t border-white/10 px-5 py-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          {[
+            { color: '#34d399', label: 'Moving' },
+            { color: '#fbbf24', label: 'Braking' },
+            { color: '#22d3ee', label: 'Tunnel' },
+            { color: '#60a5fa', label: 'Station' },
+          ].map(({ color, label }) => (
+            <div key={label} className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+              <span className="font-mono text-[10px] text-white/44">{label}</span>
+            </div>
+          ))}
         </div>
+      </div>
       </div>
     </div>
   );

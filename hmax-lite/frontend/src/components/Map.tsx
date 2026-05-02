@@ -30,7 +30,7 @@ const getLineStyle = (line: MetroLine) => ({
 });
 
 const TUNNEL_LINE_STYLE = {
-  color: '#7c3aed',
+  color: '#0891b2',
   weight: 5,
   opacity: 0.9,
   dashArray: '12, 8',
@@ -99,7 +99,7 @@ function StationMarker({
       center={[station.lat, station.lng]}
       radius={isTerminal ? 12 : isTunnel ? 10 : 7}
       pathOptions={{
-        fillColor: isTunnel ? '#7c3aed' : isTerminal ? '#00ff9d' : lineColor,
+        fillColor: isTunnel ? '#0891b2' : isTerminal ? '#00ff9d' : lineColor,
         color: '#ffffff',
         weight: isTerminal ? 3 : 2,
         opacity: 1,
@@ -107,16 +107,16 @@ function StationMarker({
       }}
     >
       <Popup className="station-popup">
-        <div className="bg-scada-surface p-4 rounded-xl min-w-[200px] border border-scada-border/50 shadow-xl">
+        <div className="min-w-[240px] rounded-[1.4rem] border border-white/12 bg-[#07101d]/95 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.48)] backdrop-blur-2xl">
           {/* Line badge */}
           <div className="flex items-center gap-2 mb-2">
             <span 
-              className="px-2 py-0.5 rounded text-[10px] font-bold text-white"
+              className="rounded-full px-3 py-1 text-[10px] font-bold text-white"
               style={{ backgroundColor: lineColor }}
             >
               {LINE_CONFIG[line].label}
             </span>
-            <span className="text-[10px] font-mono text-scada-muted uppercase tracking-wider">
+            <span className="text-[10px] font-mono text-white/36 uppercase tracking-[0.2em]">
               Station {index + 1} of {total}
             </span>
           </div>
@@ -132,22 +132,22 @@ function StationMarker({
             </span>
           )}
           
-          <h3 className="font-display font-bold text-lg text-white mb-1">
+          <h3 className="font-sans font-black text-2xl tracking-[-0.05em] text-white mb-3">
             {station.name}
           </h3>
           
           <div className="space-y-2 text-xs font-mono">
-            <div className="flex justify-between items-center py-1 border-b border-scada-border/30">
-              <span className="text-scada-muted">ID</span>
+            <div className="flex justify-between items-center rounded-xl border border-white/8 bg-white/[0.04] px-3 py-2">
+              <span className="text-white/36">ID</span>
               <span className="text-white">{station.id}</span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-scada-border/30">
-              <span className="text-scada-muted">Type</span>
+            <div className="flex justify-between items-center rounded-xl border border-white/8 bg-white/[0.04] px-3 py-2">
+              <span className="text-white/36">Type</span>
               <span className="text-white">{station.station_type}</span>
             </div>
-            <div className="flex justify-between items-center py-1">
-              <span className="text-scada-muted">Coordinates</span>
-              <span className="text-scada-text-secondary">
+            <div className="flex justify-between items-center rounded-xl border border-white/8 bg-white/[0.04] px-3 py-2">
+              <span className="text-white/36">Coordinates</span>
+              <span className="text-white/60">
                 {station.lat.toFixed(4)}, {station.lng.toFixed(4)}
               </span>
             </div>
@@ -322,34 +322,53 @@ export function Map({
         ))}
       </MapContainer>
 
+      <div className="pointer-events-none absolute inset-x-5 top-5 z-[400] flex flex-wrap items-start justify-between gap-3">
+        <div className="rounded-full border border-white/12 bg-black/42 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-[#d7ff5f] animate-pulse shadow-[0_0_18px_rgba(215,255,95,0.7)]" />
+            <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/56">
+              {selectedLine === 'all' ? 'Panama network' : `${LINE_CONFIG[selectedLine].label} focus`}
+            </span>
+          </div>
+        </div>
+
+        <div className="hidden rounded-full border border-white/12 bg-black/42 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl md:block">
+          <div className="flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.18em] text-white/48">
+            <span>{filteredTrains.length} trains</span>
+            <span>{allStations.length} stations</span>
+            <span>{selectedLine === 'all' ? '3 corridors' : '1 corridor'}</span>
+          </div>
+        </div>
+      </div>
+
       {/* Map overlay info */}
-      <div className="absolute bottom-4 left-4 glass-strong px-4 py-3 rounded-xl shadow-lg">
+      <div className="absolute bottom-5 left-5 z-[400] max-w-[calc(100%-40px)] rounded-[1.4rem] border border-white/12 bg-black/48 px-5 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-status-info animate-pulse" />
           <div>
-            <span className="text-xs font-mono text-scada-muted block uppercase tracking-wider">
+            <span className="text-[10px] font-mono text-white/38 block uppercase tracking-[0.24em]">
               Panama Metro
             </span>
-            <span className="text-sm font-medium text-white">
+            <span className="text-lg font-black tracking-[-0.04em] text-white">
               {selectedLine === 'all' ? 'All Lines' : LINE_CONFIG[selectedLine].label}
             </span>
           </div>
         </div>
-        <div className="mt-2 pt-2 border-t border-scada-border/30 flex items-center gap-4 text-xs font-mono text-scada-muted">
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-mono text-white/50">
           {selectedLine === 'all' || selectedLine === 'line1' ? (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5">
               <span className="w-2 h-2 rounded-full bg-red-500" />
               San Isidro ↔ Albrook
             </span>
           ) : null}
           {selectedLine === 'all' || selectedLine === 'line2' ? (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5">
               <span className="w-2 h-2 rounded-full bg-green-500" />
               Nuevo Tocumen ↔ Albrook
             </span>
           ) : null}
           {selectedLine === 'all' || selectedLine === 'line3' ? (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5">
               <span className="w-2 h-2 rounded-full bg-blue-500" />
               Albrook ↔ Ciudad del Futuro
             </span>
@@ -358,34 +377,34 @@ export function Map({
       </div>
 
       {/* Legend overlay */}
-      <div className="absolute bottom-4 right-4 glass-strong px-4 py-3 rounded-xl shadow-lg hidden lg:block">
-        <span className="text-[10px] font-mono text-scada-muted block mb-2 uppercase tracking-wider">
-          Map Legend
+      <div className="absolute bottom-5 right-5 z-[400] hidden rounded-[1.4rem] border border-white/12 bg-black/48 px-5 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-2xl lg:block">
+        <span className="text-[10px] font-mono text-white/38 block mb-3 uppercase tracking-[0.24em]">
+          Signal legend
         </span>
         <div className="space-y-2 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-4 h-1 rounded bg-red-500" />
-            <span className="text-scada-text-secondary">Line 1</span>
+            <span className="text-white/62">Line 1</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-1 rounded bg-green-500" />
-            <span className="text-scada-text-secondary">Line 2</span>
+            <span className="text-white/62">Line 2</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-1 rounded bg-blue-500" />
-            <span className="text-scada-text-secondary">Line 3</span>
+            <span className="text-white/62">Line 3</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-1 rounded bg-purple-500" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 3px, #0f172a 3px, #0f172a 6px)' }} />
-            <span className="text-scada-text-secondary">Tunnel Section</span>
+            <div className="w-4 h-1 rounded bg-cyan-500" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 3px, #0f172a 3px, #0f172a 6px)' }} />
+            <span className="text-white/62">Tunnel Section</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400" />
-            <span className="text-scada-text-secondary">Terminal</span>
+            <span className="text-white/62">Terminal</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full border-2 border-white" style={{ backgroundColor: 'transparent' }} />
-            <span className="text-scada-text-secondary">Station</span>
+            <span className="text-white/62">Station</span>
           </div>
         </div>
       </div>

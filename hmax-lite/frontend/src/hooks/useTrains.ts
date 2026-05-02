@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { fetchTrains, fetchAllStations } from '../utils/api';
-import { getMockTrainListResponseFromPrevious, getMockTrainListResponse, generateMockHistory } from '../utils/mockData';
+import { getMockTrainListResponseFromPrevious, getMockTrainListResponse, getMockAllLinesResponse, generateMockHistory } from '../utils/mockData';
 import type {
   TelemetryHistoryPoint,
   TrainListResponse,
@@ -38,6 +38,7 @@ export function useTrains() {
     refetchInterval: POLLING_INTERVAL,
     staleTime: POLLING_INTERVAL / 2,
     retry: 1,
+    initialData: getMockTrainListResponse,
   });
 
   const {
@@ -49,6 +50,7 @@ export function useTrains() {
     queryFn: fetchAllStations,
     staleTime: Infinity,
     retry: 1,
+    initialData: getMockAllLinesResponse,
   });
 
   useEffect(() => {
@@ -68,16 +70,23 @@ export function useTrains() {
     }
   }, [trainError]);
 
-  const effectiveTrains = (trainError || USE_MOCK) ? mockTrains : (trainData?.trains || []);
-  const effectiveSystemStatus = (trainError || USE_MOCK)
-    ? {
-        active_trains: mockTrains.length,
-        total_energy_recovered_kwh: mockTrains.reduce((s, t) => s + t.telemetry.energy_recovered_kwh, 0),
-        trains_in_tunnel: mockTrains.filter(t => t.is_in_tunnel).length,
-        system_health: 'NORMAL' as const,
-        timestamp: new Date().toISOString(),
-      }
-    : trainData?.system_status || null;
+  const effectiveTrains = useMemo(
+    () => ((trainError || USE_MOCK) ? mockTrains : (trainData?.trains || [])),
+    [mockTrains, trainData?.trains, trainError],
+  );
+  const effectiveSystemStatus = useMemo(
+    () =>
+      (trainError || USE_MOCK)
+        ? {
+            active_trains: mockTrains.length,
+            total_energy_recovered_kwh: mockTrains.reduce((s, t) => s + t.telemetry.energy_recovered_kwh, 0),
+            trains_in_tunnel: mockTrains.filter(t => t.is_in_tunnel).length,
+            system_health: 'NORMAL' as const,
+            timestamp: new Date().toISOString(),
+          }
+        : trainData?.system_status || null,
+    [mockTrains, trainData?.system_status, trainError],
+  );
 
   useEffect(() => {
     const trains = effectiveTrains;

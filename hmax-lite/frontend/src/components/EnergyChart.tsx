@@ -47,9 +47,15 @@ export function EnergyChart({ history }: EnergyChartProps) {
 
   if (chartData.length < 2) {
     return (
-      <div className="h-40 flex flex-col items-center justify-center text-scada-muted">
-        <div className="w-8 h-8 mb-3 rounded-full border-2 border-scada-border border-t-status-info animate-spin" />
-        <span className="text-sm font-mono">Collecting telemetry data...</span>
+      <div className="h-40 space-y-3 py-2">
+        <div className="flex gap-3">
+          <div className="flex-1 h-10 rounded-lg skeleton-shimmer" />
+          <div className="flex-1 h-10 rounded-lg skeleton-shimmer" />
+        </div>
+        <div className="h-24 rounded-lg skeleton-shimmer" />
+        <p className="text-[10px] font-mono text-scada-muted text-center uppercase tracking-wider">
+          Collecting telemetry...
+        </p>
       </div>
     );
   }
@@ -79,15 +85,15 @@ export function EnergyChart({ history }: EnergyChartProps) {
             <defs>
               {/* Gradient for the area */}
               <linearGradient id="energyGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#00ff9d" stopOpacity={0.5} />
-                <stop offset="50%" stopColor="#00ff9d" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#00ff9d" stopOpacity={0} />
+                <stop offset="5%" stopColor="#34d399" stopOpacity={0.5} />
+                <stop offset="50%" stopColor="#34d399" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
               </linearGradient>
               
               {/* Gradient for the line */}
               <linearGradient id="lineGradient" x1="0" y1="0" x2="100%" y2="0">
-                <stop offset="0%" stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#00ff9d" />
+                <stop offset="0%" stopColor="#60a5fa" />
+                <stop offset="100%" stopColor="#34d399" />
               </linearGradient>
             </defs>
             
@@ -167,8 +173,8 @@ export function TempGauge({ temp, minTemp = 40, maxTemp = 90 }: TempGaugeProps) 
   const barColor = isCritical
     ? '#ef4444'
     : isHot
-    ? '#f59e0b'
-    : '#00ff9d';
+    ? '#fbbf24'
+    : '#34d399';
 
   const statusText = isCritical
     ? 'CRITICAL'

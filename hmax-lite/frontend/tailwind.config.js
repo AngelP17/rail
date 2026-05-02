@@ -17,18 +17,14 @@ export default {
           'text-secondary': '#94a3b8',
           muted: '#64748b',
         },
-        // Status Colors
+        // Status Colors — saturation < 80%, no purple (LILA BAN)
         status: {
-          normal: '#00ff9d',
-          'normal-glow': 'rgba(0, 255, 157, 0.4)',
-          warning: '#f59e0b',
-          'warning-glow': 'rgba(245, 158, 11, 0.4)',
-          danger: '#ef4444',
-          'danger-glow': 'rgba(239, 68, 68, 0.4)',
-          tunnel: '#a855f7',
-          'tunnel-glow': 'rgba(168, 85, 247, 0.4)',
-          info: '#3b82f6',
-          'info-glow': 'rgba(59, 130, 246, 0.4)',
+          normal: '#34d399',   // Emerald 400 — operational green
+          warning: '#fbbf24',  // Amber 400
+          danger: '#f87171',   // Red 400
+          tunnel: '#22d3ee',   // Cyan 400 — replaces banned purple
+          info: '#60a5fa',     // Blue 400
+          muted: '#475569',
         },
         // Route line color
         route: {
@@ -38,8 +34,7 @@ export default {
       },
       fontFamily: {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
-        display: ['Orbitron', 'sans-serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Outfit', 'system-ui', 'sans-serif'],
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -96,10 +91,9 @@ export default {
         },
       },
       boxShadow: {
-        'neon-green': '0 0 10px #00ff9d, 0 0 20px rgba(0, 255, 157, 0.2)',
-        'neon-amber': '0 0 10px #f59e0b, 0 0 20px rgba(245, 158, 11, 0.2)',
-        'neon-purple': '0 0 10px #a855f7, 0 0 20px rgba(168, 85, 247, 0.2)',
         'glass': '0 8px 32px rgba(0, 0, 0, 0.4)',
+        'glass-inner': 'inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+        'diffuse': '0 20px 40px -15px rgba(0, 0, 0, 0.5)',
       },
       backdropBlur: {
         xs: '2px',

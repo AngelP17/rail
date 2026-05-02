@@ -28,7 +28,7 @@ function createTrainIcon(
   lineColor: string
 ): L.DivIcon {
   const color = getStatusColor(isInTunnel, isBraking);
-  const size = isSelected ? 36 : 28;
+  const size = isSelected ? 42 : 32;
   const borderWidth = isSelected ? 3 : 2;
 
   // Enhanced SVG train icon with enterprise styling
@@ -61,23 +61,23 @@ function createTrainIcon(
               stroke-width="2"/>
       
       <!-- Main train body -->
-      <rect x="4" y="6" width="24" height="18" rx="3" 
-            fill="${color}" 
+      <rect x="4" y="6" width="24" height="18" rx="6" 
+            fill="#07101d" 
             stroke="${isSelected ? '#ffffff' : color}" 
             stroke-width="${borderWidth}"
             filter="url(#glow)"/>
       
       <!-- Windows -->
-      <rect x="7" y="9" width="5" height="5" rx="1" fill="#0f172a"/>
-      <rect x="13.5" y="9" width="5" height="5" rx="1" fill="#0f172a"/>
-      <rect x="20" y="9" width="5" height="5" rx="1" fill="#0f172a"/>
+      <rect x="7" y="9" width="5" height="5" rx="1.5" fill="${color}"/>
+      <rect x="13.5" y="9" width="5" height="5" rx="1.5" fill="${color}"/>
+      <rect x="20" y="9" width="5" height="5" rx="1.5" fill="${color}"/>
       
       <!-- Door line -->
-      <line x1="16" y1="15" x2="16" y2="21" stroke="#0f172a" stroke-width="1" stroke-opacity="0.5"/>
+      <line x1="16" y1="15" x2="16" y2="21" stroke="${color}" stroke-width="1" stroke-opacity="0.55"/>
       
       <!-- Wheels -->
-      <circle cx="9" cy="25" r="2.5" fill="${color}"/>
-      <circle cx="23" cy="25" r="2.5" fill="${color}"/>
+      <circle cx="9" cy="25" r="2.5" fill="#07101d" stroke="${color}" stroke-width="1.5"/>
+      <circle cx="23" cy="25" r="2.5" fill="#07101d" stroke="${color}" stroke-width="1.5"/>
       
       <!-- Status indicator dot -->
       <circle cx="26" cy="8" r="2" fill="#ffffff"/>
@@ -144,69 +144,71 @@ export function TrainMarker({ train, isSelected, onSelect }: TrainMarkerProps) {
       zIndexOffset={isSelected ? 1000 : 0}
     >
       <Popup className="train-popup">
-        <div className="bg-scada-surface p-4 rounded-xl min-w-[220px] border border-scada-border/50 shadow-2xl">
+        <div className="relative min-w-[300px] overflow-hidden rounded-[1.5rem] border border-white/12 bg-[#07101d]/95 p-5 shadow-[0_28px_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_0%,rgba(96,165,250,0.2),transparent_36%)]" />
+          <div className="relative">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-4">
             <div
-              className="w-3 h-3 rounded-full animate-pulse"
+              className="w-4 h-4 rounded-full animate-pulse"
               style={{ 
                 backgroundColor: statusColor,
-                boxShadow: `0 0 10px ${statusColor}` 
+                boxShadow: `0 0 24px ${statusColor}` 
               }}
             />
             <div>
-              <span className="font-display font-bold text-lg text-white block leading-tight">
+              <span className="font-mono font-black text-2xl tracking-[-0.06em] text-white block leading-tight">
                 {train.id}
               </span>
-              <span className="text-xs text-scada-muted">{train.name}</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/38">{train.name}</span>
             </div>
           </div>
 
-          {/* Line badge */}
-          <div 
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium mb-3"
-            style={{ 
-              backgroundColor: `${lineColor}20`,
-              border: `1px solid ${lineColor}50`,
-              color: lineColor
-            }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: lineColor }} />
-            {LINE_CONFIG[train.line].label}
-          </div>
+          <div className="mb-5 flex flex-wrap gap-2">
+            <div 
+              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-mono font-bold"
+              style={{ 
+                backgroundColor: `${lineColor}18`,
+                borderColor: `${lineColor}55`,
+                color: lineColor
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: lineColor }} />
+              {LINE_CONFIG[train.line].label}
+            </div>
 
-          {/* Status badge */}
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-mono font-medium mb-4 ${statusInfo.className}`}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: statusColor }} />
-            {statusInfo.label}
+            <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-mono font-bold ${statusInfo.className}`}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: statusColor }} />
+              {statusInfo.label}
+            </div>
           </div>
           
           {/* Telemetry grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-scada-card/50 rounded-lg p-2.5">
-              <span className="text-[10px] text-scada-muted block uppercase tracking-wider mb-1">Speed</span>
-              <span className="font-mono text-sm text-white font-semibold">
+            <div className="rounded-2xl border border-white/8 bg-white/[0.055] p-4">
+              <span className="text-[10px] text-white/36 block uppercase tracking-[0.2em] mb-2">Speed</span>
+              <span className="font-mono text-lg text-white font-black">
                 {formatSpeed(train.telemetry.speed_kmh)}
               </span>
             </div>
-            <div className="bg-scada-card/50 rounded-lg p-2.5">
-              <span className="text-[10px] text-scada-muted block uppercase tracking-wider mb-1">Direction</span>
-              <span className="font-mono text-sm text-white font-semibold">
+            <div className="rounded-2xl border border-white/8 bg-white/[0.055] p-4">
+              <span className="text-[10px] text-white/36 block uppercase tracking-[0.2em] mb-2">Direction</span>
+              <span className="font-mono text-lg text-white font-black">
                 {train.direction}
               </span>
             </div>
-            <div className="bg-scada-card/50 rounded-lg p-2.5 col-span-2">
-              <span className="text-[10px] text-scada-muted block uppercase tracking-wider mb-1">Next Station</span>
-              <span className="font-mono text-sm text-white font-semibold">
+            <div className="rounded-2xl border border-white/8 bg-white/[0.055] p-4 col-span-2">
+              <span className="text-[10px] text-white/36 block uppercase tracking-[0.2em] mb-2">Next Station</span>
+              <span className="font-mono text-lg text-white font-black">
                 {train.position.next_station_id}
               </span>
             </div>
           </div>
 
           {/* ETA */}
-          <div className="flex items-center justify-between py-2 border-t border-scada-border/30 mb-3">
-            <span className="text-xs text-scada-muted font-mono uppercase tracking-wider">ETA</span>
-            <span className="font-mono text-lg text-status-info font-bold">
+          <div className="flex items-center justify-between py-4 border-t border-white/10 mb-3">
+            <span className="text-xs text-white/36 font-mono uppercase tracking-[0.22em]">ETA</span>
+            <span className="font-mono text-3xl text-status-info font-black tracking-[-0.05em]">
               {formatEta(train.next_station_eta_seconds)}
             </span>
           </div>
@@ -214,10 +216,11 @@ export function TrainMarker({ train, isSelected, onSelect }: TrainMarkerProps) {
           {/* Action button */}
           <button
             onClick={() => onSelect(train.id)}
-            className="w-full py-2.5 bg-gradient-to-r from-status-info to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-500 hover:to-blue-700 transition-all duration-200 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 active:scale-[0.98]"
+            className="w-full rounded-full bg-white py-3 text-sm font-black text-black transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
           >
             View Details
           </button>
+          </div>
         </div>
       </Popup>
     </Marker>

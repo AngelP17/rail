@@ -40,24 +40,23 @@ export function SpeedGauge({ speed, maxSpeed = 100, isBraking = false }: SpeedGa
   }, [percentage]);
 
   // Determine color based on state with enhanced palette
-  const gaugeColor = isBraking ? '#f59e0b' : percentage > 80 ? '#00ff9d' : '#3b82f6';
-  const glowColor = isBraking ? 'rgba(245, 158, 11, 0.5)' : percentage > 80 ? 'rgba(0, 255, 157, 0.5)' : 'rgba(59, 130, 246, 0.5)';
+  const gaugeColor = isBraking ? '#fbbf24' : percentage > 80 ? '#34d399' : '#60a5fa';
+  const glowColor = isBraking ? 'rgba(251,191,36,0.3)' : percentage > 80 ? 'rgba(52,211,153,0.3)' : 'rgba(96,165,250,0.3)';
 
-  // Speed zones for color coding
   const getSpeedZone = (pct: number) => {
-    if (pct < 30) return { color: '#3b82f6', label: 'LOW' };
-    if (pct < 70) return { color: '#00ff9d', label: 'CRUISE' };
-    if (pct < 90) return { color: '#f59e0b', label: 'HIGH' };
-    return { color: '#ef4444', label: 'MAX' };
+    if (pct < 30) return { color: '#60a5fa', label: 'LOW' };
+    if (pct < 70) return { color: '#34d399', label: 'CRUISE' };
+    if (pct < 90) return { color: '#fbbf24', label: 'HIGH' };
+    return { color: '#f87171', label: 'MAX' };
   };
 
   const speedZone = getSpeedZone(percentage);
 
   return (
-    <div className="relative flex items-center justify-center">
+    <div className="relative mx-auto flex h-56 w-56 max-w-full items-center justify-center overflow-visible">
       {/* Outer decorative ring */}
       <div 
-        className="absolute inset-0 rounded-full opacity-20"
+        className="absolute inset-2 rounded-full opacity-20"
         style={{
           background: `conic-gradient(from 225deg, ${gaugeColor} 0deg, transparent ${(percentage / 100) * 270}deg, transparent 270deg)`,
         }}
@@ -66,12 +65,12 @@ export function SpeedGauge({ speed, maxSpeed = 100, isBraking = false }: SpeedGa
       {/* SVG Gauge */}
       <svg
         viewBox="0 0 200 200"
-        className="w-52 h-52 transform -rotate-90"
+        className="h-52 w-52 shrink-0 transform -rotate-90"
       >
         <defs>
           {/* Gradient for the gauge fill */}
           <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={isBraking ? '#fbbf24' : '#3b82f6'} />
+            <stop offset="0%" stopColor={isBraking ? '#fbbf24' : '#60a5fa'} />
             <stop offset="100%" stopColor={gaugeColor} />
           </linearGradient>
           
@@ -162,7 +161,7 @@ export function SpeedGauge({ speed, maxSpeed = 100, isBraking = false }: SpeedGa
         {/* Speed value */}
         <div className="relative">
           <span
-            className="font-display text-5xl font-bold tabular-nums transition-colors duration-300"
+            className="font-mono text-5xl font-bold tabular-nums transition-colors duration-300"
             style={{ color: gaugeColor }}
           >
             {Math.round(speed)}

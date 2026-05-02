@@ -60,7 +60,7 @@ flowchart TB
 </p>
 
 <p align="center">
-  <em>Full dashboard with 13 active trains across Lines 1, 2, and 3</em>
+  <em>Cinematic command landing with the redesigned OCC visual system</em>
 </p>
 
 <p align="center">
@@ -68,7 +68,7 @@ flowchart TB
 </p>
 
 <p align="center">
-  <em>Train telemetry with speed gauge, energy chart, and route progress</em>
+  <em>Live command cockpit with upgraded fleet rail, map surface, and train telemetry</em>
 </p>
 
 <p align="center">
@@ -76,7 +76,7 @@ flowchart TB
 </p>
 
 <p align="center">
-  <em>Line 3 filtered view showing tunnel detection and monorail fleet</em>
+  <em>Line 3 tunnel-focused command view with relay and fleet state surfaced</em>
 </p>
 
 ---

@@ -28,17 +28,12 @@
   --scada-text-secondary: #94a3b8;
   --scada-muted: #64748b;
 
-  /* Status Colors - Enhanced with glow variants */
-  --status-normal: #00ff9d;
-  --status-normal-glow: rgba(0, 255, 157, 0.4);
-  --status-warning: #f59e0b;
-  --status-warning-glow: rgba(245, 158, 11, 0.4);
-  --status-danger: #ef4444;
-  --status-danger-glow: rgba(239, 68, 68, 0.4);
-  --status-tunnel: #a855f7;
-  --status-tunnel-glow: rgba(168, 85, 247, 0.4);
-  --status-info: #3b82f6;
-  --status-info-glow: rgba(59, 130, 246, 0.4);
+  /* Status Colors — refined, saturation < 80%, no purple */
+  --status-normal: #34d399;
+  --status-warning: #fbbf24;
+  --status-danger: #f87171;
+  --status-tunnel: #22d3ee;
+  --status-info: #60a5fa;
 
   /* Animation Timing */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -69,22 +64,27 @@
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   background: var(--scada-bg);
-  background-image: 
-    radial-gradient(ellipse at top, rgba(59, 130, 246, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom, rgba(0, 255, 157, 0.02) 0%, transparent 50%);
+  background-image:
+    radial-gradient(ellipse at top, rgba(59, 130, 246, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(52, 211, 153, 0.03) 0%, transparent 50%);
   color: var(--scada-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+.grain-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.36'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
 }
 
 /* ============================================================================
@@ -218,36 +218,21 @@ body {
    Utility Classes - Enhanced
    ============================================================================ */
 
-/* Glass morphism effect */
+/* Glass morphism effect — inner refraction border, no outer neon */
 .glass {
   background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--scada-border-subtle);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .glass-strong {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--scada-border);
-}
-
-/* Neon glow effects */
-.glow-green {
-  box-shadow: 0 0 10px var(--status-normal), 0 0 30px var(--status-normal-glow);
-}
-
-.glow-amber {
-  box-shadow: 0 0 10px var(--status-warning), 0 0 30px var(--status-warning-glow);
-}
-
-.glow-purple {
-  box-shadow: 0 0 10px var(--status-tunnel), 0 0 30px var(--status-tunnel-glow);
-}
-
-.glow-red {
-  box-shadow: 0 0 10px var(--status-danger), 0 0 30px var(--status-danger-glow);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* Text glow */
@@ -315,9 +300,9 @@ body {
 }
 
 .status-badge-tunnel {
-  background: rgba(168, 85, 247, 0.1);
+  background: rgba(34, 211, 238, 0.1);
   color: var(--status-tunnel);
-  border: 1px solid rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(34, 211, 238, 0.2);
 }
 
 .status-badge-tunnel::before {
@@ -350,16 +335,17 @@ body {
   border: none;
   cursor: pointer;
   transition: all var(--transition-fast);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  transform: scale(0.98);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .btn-secondary {
@@ -495,6 +481,22 @@ body {
   100% {
     background-position: 0% 50%;
   }
+}
+
+/* Train list stagger entrance */
+@keyframes train-item-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.train-item-enter {
+  animation: train-item-slide 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Animation utility classes */
