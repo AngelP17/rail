@@ -1,7 +1,7 @@
 # HMAX-Lite: Panama Metro Digital Twin
 
 <p align="center">
-  <img src="docs/hmax-banner.svg" alt="HMAX-Lite Banner" width="800"/>
+  <img src="hmax-lite/docs/dashboard-full.png" alt="HMAX-Lite Dashboard" width="800"/>
 </p>
 
 ## 🚝 Project Overview
@@ -56,7 +56,7 @@ flowchart TB
 ### Dashboard Screenshots
 
 <p align="center">
-  <img src="docs/dashboard-full.png" alt="Full Dashboard - All Lines" width="800"/>
+  <img src="hmax-lite/docs/dashboard-full.png" alt="Full Dashboard - All Lines" width="800"/>
 </p>
 
 <p align="center">
@@ -64,7 +64,7 @@ flowchart TB
 </p>
 
 <p align="center">
-  <img src="docs/dashboard-telemetry.png" alt="Train Telemetry View" width="800"/>
+  <img src="hmax-lite/docs/dashboard-telemetry.png" alt="Train Telemetry View" width="800"/>
 </p>
 
 <p align="center">
@@ -72,7 +72,7 @@ flowchart TB
 </p>
 
 <p align="center">
-  <img src="docs/dashboard-line3.png" alt="Line 3 View" width="800"/>
+  <img src="hmax-lite/docs/dashboard-line3.png" alt="Line 3 View" width="800"/>
 </p>
 
 <p align="center">
