@@ -1,7 +1,7 @@
 # HMAX-Lite: Panama Metro Digital Twin
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-occ.png?v=2" alt="HMAX-Lite OCC Dashboard" width="900"/>
+  <img src="https://raw.githubusercontent.com/AngelP17/rail/main/hmax-lite/docs/screenshots/dashboard-occ.png" alt="HMAX-Lite OCC Dashboard" width="900"/>
 </p>
 
 ## 🚝 Project Overview
@@ -49,7 +49,7 @@ flowchart LR
 ### Dashboard Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-telemetry.png?v=2" alt="Train Telemetry View" width="900"/>
+  <img src="https://raw.githubusercontent.com/AngelP17/rail/main/hmax-lite/docs/screenshots/dashboard-telemetry.png" alt="Train Telemetry View" width="900"/>
 </p>
 
 <p align="center">
@@ -57,7 +57,7 @@ flowchart LR
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-line3.png?v=2" alt="Line 3 Tunnel View" width="900"/>
+  <img src="https://raw.githubusercontent.com/AngelP17/rail/main/hmax-lite/docs/screenshots/dashboard-line3.png" alt="Line 3 Tunnel View" width="900"/>
 </p>
 
 <p align="center">
