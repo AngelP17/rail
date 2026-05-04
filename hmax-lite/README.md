@@ -1,6 +1,6 @@
 # HMAX-Lite: Panama Metro Digital Twin
 
-![HMAX-Lite OCC Dashboard](docs/screenshots/dashboard-occ.png)
+![HMAX-Lite OCC Dashboard](images/dashboard-occ.png)
 
 ## 🚝 Project Overview
 
@@ -48,11 +48,11 @@ flowchart LR
 
 *Train telemetry sidebar with speed gauge, B-CHOP energy recovery, tunnel relay state, and brake temperature*
 
-![Train Telemetry View](docs/screenshots/dashboard-telemetry.png)
+![Train Telemetry View](images/dashboard-telemetry.png)
 
 *Line 3 tunnel-focused view with TUNNEL_RELAY communications mode and fleet state*
 
-![Line 3 Tunnel View](docs/screenshots/dashboard-line3.png)
+![Line 3 Tunnel View](images/dashboard-line3.png)
 
 ---
 
