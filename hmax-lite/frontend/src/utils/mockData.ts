@@ -162,12 +162,13 @@ function getSegment(line: MetroLine, currentStationId: string, direction: TrainS
 
 function createMockTrains(): TrainStatus[] {
   const now = Date.now();
+  const jitter = (base: number, range: number) => Math.round((base + Math.sin(now / 5000) * range) * 10) / 10;
   return [
-    makeTrain('LINE1-001', 'LINE1 Train 1', 'line1', 2, 0.45, 62, 'SOUTHBOUND', false, false, false, 24.5 + Math.sin(now / 5000) * 2, 48.2),
-    makeTrain('LINE1-002', 'LINE1 Train 2', 'line1', 7, 0.82, 28, 'SOUTHBOUND', true, false, false, 31.8 + Math.sin(now / 4000) * 3, 62.5),
+    makeTrain('LINE1-001', 'LINE1 Train 1', 'line1', 2, 0.45, 62, 'SOUTHBOUND', false, false, false, jitter(24.5, 2), 48.2),
+    makeTrain('LINE1-002', 'LINE1 Train 2', 'line1', 7, 0.82, 28, 'SOUTHBOUND', true, false, false, jitter(31.8, 3), 62.5),
     makeTrain('LINE1-003', 'LINE1 Train 3', 'line1', 11, 0.15, 71, 'NORTHBOUND', false, false, false, 18.3, 44.1),
     makeTrain('LINE1-004', 'LINE1 Train 4', 'line1', 14, 0.0, 0, 'SOUTHBOUND', false, false, true, 12.7, 42.0),
-    makeTrain('LINE2-001', 'LINE2 Train 1', 'line2', 1, 0.55, 55, 'WESTBOUND', false, false, false, 19.2, 46.8),
+    makeTrain('LINE2-001', 'LINE2 Train 1', 'line2', 1, 0.55, 55, 'WESTBOUND', false, false, false, jitter(19.2, 2), 46.8),
     makeTrain('LINE2-002', 'LINE2 Train 2', 'line2', 5, 0.30, 68, 'WESTBOUND', false, false, false, 22.1, 50.3),
     makeTrain('LINE2-003', 'LINE2 Train 3', 'line2', 9, 0.78, 35, 'EASTBOUND', true, false, false, 28.9, 58.7),
     makeTrain('LINE2-004', 'LINE2 Train 4', 'line2', 12, 0.0, 0, 'EASTBOUND', false, false, true, 15.4, 43.2),
@@ -307,8 +308,8 @@ export function generateMockHistory(): TelemetryHistoryPoint[] {
   const now = Date.now();
   return Array.from({ length: 30 }, (_, i) => ({
     timestamp: now - (30 - i) * 1000,
-    speed_kmh: 40 + Math.random() * 40,
+    speed_kmh: 40 + Math.sin(i / 3) * 30 + (Math.random() - 0.5) * 10,
     energy_recovered_kwh: i * 0.15 + Math.random() * 0.5,
-    regen_braking_temp: 42 + Math.random() * 20,
+    regen_braking_temp: 42 + Math.sin(i / 5) * 12 + Math.random() * 5,
   }));
 }

@@ -1,7 +1,7 @@
 # HMAX-Lite: Panama Metro Digital Twin
 
 <p align="center">
-  <img src="docs/dashboard-full.png" alt="HMAX-Lite Dashboard" width="800"/>
+  <img src="docs/screenshots/dashboard-occ.png" alt="HMAX-Lite OCC Dashboard" width="900"/>
 </p>
 
 ## 🚝 Project Overview
@@ -49,27 +49,27 @@ flowchart LR
 ### Dashboard Screenshots
 
 <p align="center">
-  <img src="docs/dashboard-full.png" alt="Full Dashboard - All Lines" width="800"/>
+  <img src="docs/screenshots/dashboard-occ.png" alt="OCC Dashboard - All Lines" width="900"/>
 </p>
 
 <p align="center">
-  <em>Network overview with live fleet, tunnel, and energy context</em>
+  <em>Operations Control Center with live network map and telemetry</em>
 </p>
 
 <p align="center">
-  <img src="docs/dashboard-telemetry.png" alt="Train Telemetry View" width="800"/>
+  <img src="docs/screenshots/dashboard-telemetry.png" alt="Train Telemetry View" width="900"/>
 </p>
 
 <p align="center">
-  <em>Operations view with fleet rail, map surface, and train telemetry</em>
+  <em>Train telemetry sidebar with speed gauge, B-CHOP, tunnel relay, and brake temperature</em>
 </p>
 
 <p align="center">
-  <img src="docs/dashboard-line3.png" alt="Line 3 View" width="800"/>
+  <img src="docs/screenshots/dashboard-line3.png" alt="Line 3 View" width="900"/>
 </p>
 
 <p align="center">
-  <em>Line 3 tunnel-focused command view with relay and fleet state surfaced</em>
+  <em>Line 3 tunnel-focused view with relay state and fleet metrics</em>
 </p>
 
 ---

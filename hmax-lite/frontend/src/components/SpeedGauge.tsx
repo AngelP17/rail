@@ -1,9 +1,8 @@
 /**
- * HMAX-Lite: Speed Gauge Component - Enterprise Edition
- * =====================================================
- * 
- * Circular gauge display for train speed with SCADA styling.
- * Enhanced with enterprise-level animations and visual polish.
+ * HMAX-Lite: Speed Gauge Component - OCC Edition
+ * ================================================
+ *
+ * Compact circular gauge for train speed in telemetry sidebar.
  */
 
 import { useMemo } from 'react';
@@ -15,16 +14,14 @@ interface SpeedGaugeProps {
 }
 
 export function SpeedGauge({ speed, maxSpeed = 100, isBraking = false }: SpeedGaugeProps) {
-  // Calculate gauge fill percentage
   const percentage = Math.min((speed / maxSpeed) * 100, 100);
-  
-  // Calculate SVG arc with enhanced precision
+
   const arcData = useMemo(() => {
-    const radius = 85;
-    const strokeWidth = 14;
+    const radius = 60;
+    const strokeWidth = 10;
     const circumference = 2 * Math.PI * radius;
-    const startAngle = -225; // Start from bottom-left
-    const endAngle = 45;     // End at bottom-right
+    const startAngle = -225;
+    const endAngle = 45;
     const angleRange = endAngle - startAngle;
     const arcLength = (circumference * angleRange) / 360;
     const filledLength = (arcLength * percentage) / 100;
@@ -35,97 +32,39 @@ export function SpeedGauge({ speed, maxSpeed = 100, isBraking = false }: SpeedGa
       strokeWidth,
       arcLength,
       dashOffset,
-      startAngle,
     };
   }, [percentage]);
 
-  // Determine color based on state with enhanced palette
   const gaugeColor = isBraking ? '#fbbf24' : percentage > 80 ? '#34d399' : '#60a5fa';
-  const glowColor = isBraking ? 'rgba(251,191,36,0.3)' : percentage > 80 ? 'rgba(52,211,153,0.3)' : 'rgba(96,165,250,0.3)';
-
-  const getSpeedZone = (pct: number) => {
-    if (pct < 30) return { color: '#60a5fa', label: 'LOW' };
-    if (pct < 70) return { color: '#34d399', label: 'CRUISE' };
-    if (pct < 90) return { color: '#fbbf24', label: 'HIGH' };
-    return { color: '#f87171', label: 'MAX' };
-  };
-
-  const speedZone = getSpeedZone(percentage);
 
   return (
-    <div className="relative mx-auto flex h-56 w-56 max-w-full items-center justify-center overflow-visible">
-      {/* Outer decorative ring */}
-      <div 
-        className="absolute inset-2 rounded-full opacity-20"
-        style={{
-          background: `conic-gradient(from 225deg, ${gaugeColor} 0deg, transparent ${(percentage / 100) * 270}deg, transparent 270deg)`,
-        }}
-      />
-
+    <div className="relative mx-auto flex h-36 w-36 items-center justify-center">
       {/* SVG Gauge */}
-      <svg
-        viewBox="0 0 200 200"
-        className="h-52 w-52 shrink-0 transform -rotate-90"
-      >
+      <svg viewBox="0 0 140 140" className="h-32 w-32 -rotate-90">
         <defs>
-          {/* Gradient for the gauge fill */}
           <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor={isBraking ? '#fbbf24' : '#60a5fa'} />
             <stop offset="100%" stopColor={gaugeColor} />
           </linearGradient>
-          
-          {/* Glow filter */}
-          <filter id="gaugeGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
         </defs>
-        
-        {/* Background arc track */}
+
+        {/* Background arc */}
         <circle
-          cx="100"
-          cy="100"
+          cx="70"
+          cy="70"
           r={arcData.radius}
           fill="none"
           stroke="#1e293b"
           strokeWidth={arcData.strokeWidth}
           strokeDasharray={`${arcData.arcLength} ${arcData.arcLength}`}
           strokeLinecap="round"
-          transform="rotate(-45 100 100)"
+          transform="rotate(-45 70 70)"
         />
 
-        {/* Subtle tick marks */}
-        {[0, 25, 50, 75, 100].map((mark) => {
-          const angle = -225 + (mark / 100) * 270;
-          const rad = (angle * Math.PI) / 180;
-          const innerR = arcData.radius - arcData.strokeWidth / 2 - 5;
-          const outerR = arcData.radius - arcData.strokeWidth / 2 - 2;
-          const x1 = 100 + innerR * Math.cos(rad);
-          const y1 = 100 + innerR * Math.sin(rad);
-          const x2 = 100 + outerR * Math.cos(rad);
-          const y2 = 100 + outerR * Math.sin(rad);
-          
-          return (
-            <line
-              key={mark}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              stroke="#334155"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          );
-        })}
-        
-        {/* Filled arc with gradient */}
+        {/* Filled arc */}
         <circle
-          cx="100"
-          cy="100"
+          cx="70"
+          cy="70"
           r={arcData.radius}
           fill="none"
           stroke="url(#gaugeGradient)"
@@ -133,24 +72,20 @@ export function SpeedGauge({ speed, maxSpeed = 100, isBraking = false }: SpeedGa
           strokeDasharray={`${arcData.arcLength} ${arcData.arcLength}`}
           strokeDashoffset={arcData.dashOffset}
           strokeLinecap="round"
-          transform="rotate(-45 100 100)"
+          transform="rotate(-45 70 70)"
           className="transition-all duration-500 ease-out"
-          style={{
-            filter: `drop-shadow(0 0 8px ${glowColor})`,
-          }}
+          style={{ filter: `drop-shadow(0 0 6px ${gaugeColor}40)` }}
         />
 
-        {/* Needle/indicator at current position */}
+        {/* Needle */}
         {percentage > 0 && (
-          <g transform={`rotate(${(percentage / 100) * 270 - 225} 100 100)`}>
+          <g transform={`rotate(${(percentage / 100) * 270 - 225} 70 70)`}>
             <circle
-              cx={100 + arcData.radius}
-              cy="100"
-              r="5"
+              cx={70 + arcData.radius}
+              cy="70"
+              r="4"
               fill="#ffffff"
-              style={{
-                filter: `drop-shadow(0 0 6px ${gaugeColor})`,
-              }}
+              style={{ filter: `drop-shadow(0 0 4px ${gaugeColor})` }}
             />
           </g>
         )}
@@ -158,62 +93,15 @@ export function SpeedGauge({ speed, maxSpeed = 100, isBraking = false }: SpeedGa
 
       {/* Center display */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {/* Speed value */}
-        <div className="relative">
-          <span
-            className="font-mono text-5xl font-bold tabular-nums transition-colors duration-300"
-            style={{ color: gaugeColor }}
-          >
-            {Math.round(speed)}
-          </span>
-          <span className="absolute -right-6 top-2 text-xs text-scada-muted font-mono">
-            km/h
-          </span>
-        </div>
-
-        {/* Speed zone indicator */}
-        <div 
-          className="mt-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider"
-          style={{ 
-            backgroundColor: `${speedZone.color}15`,
-            color: speedZone.color,
-            border: `1px solid ${speedZone.color}30`
-          }}
-        >
-          {speedZone.label}
-        </div>
-
-        {/* Braking indicator */}
+        <span className="font-mono text-3xl font-bold tabular-nums" style={{ color: gaugeColor }}>
+          {Math.round(speed)}
+        </span>
+        <span className="text-[10px] text-white/40 font-mono">km/h</span>
         {isBraking && (
-          <div className="mt-2 flex items-center gap-1.5 px-3 py-1 bg-status-warning/10 rounded-full border border-status-warning/30">
-            <span className="w-2 h-2 rounded-full bg-status-warning animate-pulse" />
-            <span className="text-status-warning text-xs font-mono font-semibold uppercase tracking-wider">
-              Regen Brake
-            </span>
-          </div>
+          <span className="mt-0.5 text-[9px] font-mono font-bold uppercase tracking-wider text-[#fbbf24]">
+            Brake
+          </span>
         )}
-      </div>
-
-      {/* Scale markers */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[0, 25, 50, 75, 100].map((mark) => {
-          const angle = -225 + (mark / 100) * 270;
-          const x = 100 + 102 * Math.cos((angle * Math.PI) / 180);
-          const y = 100 + 102 * Math.sin((angle * Math.PI) / 180);
-          return (
-            <span
-              key={mark}
-              className="absolute text-scada-muted text-xs font-mono font-medium"
-              style={{
-                left: `${(x / 200) * 100}%`,
-                top: `${(y / 200) * 100}%`,
-                transform: 'translate(-50%, -50%)',
-              }}
-            >
-              {mark}
-            </span>
-          );
-        })}
       </div>
     </div>
   );
