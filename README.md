@@ -27,30 +27,23 @@ This project serves as a "Digital Twin" proof-of-concept for the **Hitachi Rail 
 ## 🎯 Architecture
 
 ```mermaid
-flowchart TB
-    subgraph Docker["Docker Compose"]
-        subgraph Backend["Train Simulator (FastAPI)"]
-            PE["Physics Engine"]
-            TG["Telemetry Generator"]
-            GF["Geofencing / Tunnel"]
-            ML["Multi-Line: 13 trains across 3 lines"]
-        end
-        
-        subgraph Frontend["Operations Dashboard (React + TypeScript)"]
-            HD["Header: System Status + Line Selector"]
-            LM["Leaflet Map: 3 Lines + 39 Stations"]
-            TL["Train List: Grouped by Line"]
-            TS["Telemetry Sidebar: Gauges + Charts"]
-            MD["Mock Data Layer: Offline Support"]
-        end
-        
-        Backend -->|"REST API / SSE"| Frontend
-        MD -.->|"Fallback when offline"| Frontend
-    end
-    
-    style Docker fill:#1a1a2e,stroke:#16213e,color:#fff
-    style Backend fill:#0f3460,stroke:#e94560,color:#fff
-    style Frontend fill:#0f3460,stroke:#00d9ff,color:#fff
+flowchart LR
+    Browser["Browser\nReact + Vite + Leaflet"] --> Query["TanStack Query\n1s polling"]
+    Query -->|"GET /api/trains\nGET /api/stations"| API["FastAPI backend"]
+    API --> Engine["Simulation engine\nposition, speed, dwell, B-CHOP"]
+    Engine --> Routes["Station and route data\nLines 1, 2, 3"]
+    Routes --> Engine
+    Engine --> API
+    API --> Query
+    Query --> UI["Operations view\nfleet rail, map, telemetry"]
+    Mock["Frontend mock telemetry\nAPI fallback or VITE_USE_MOCK=true"] -.-> Query
+
+    classDef client fill:#0f172a,stroke:#22d3ee,color:#fff
+    classDef backend fill:#111827,stroke:#34d399,color:#fff
+    classDef data fill:#111827,stroke:#fbbf24,color:#fff
+    class Browser,Query,UI client
+    class API,Engine backend
+    class Routes,Mock data
 ```
 
 ### Dashboard Screenshots
@@ -97,7 +90,7 @@ flowchart TB
 **Engineering Context:** The 5.3km tunnel under the Panama Canal requires specific communication relays and safety protocols.
 
 - **Geofence Detection:** System automatically detects when trains enter the zone between Balboa and Panama Pacifico
-- **Visual Feedback:** Dashboard switches train status to `TUNNEL_MODE` with purple indicators
+- **Visual Feedback:** Dashboard switches train status to `TUNNEL_MODE` with cyan indicators
 - **Communication Mode:** Telemetry switches to `TUNNEL_RELAY` protocol simulation
 - **Line-Specific:** Tunnel functionality only applies to Line 3 trains
 

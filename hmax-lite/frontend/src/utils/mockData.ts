@@ -113,6 +113,53 @@ function makeTrain(
   };
 }
 
+function directionFor(line: MetroLine, forward: boolean): TrainStatus['direction'] {
+  if (line === 'line1') return forward ? 'SOUTHBOUND' : 'NORTHBOUND';
+  return forward ? 'WESTBOUND' : 'EASTBOUND';
+}
+
+function isForwardDirection(line: MetroLine, direction: TrainStatus['direction']): boolean {
+  if (line === 'line1') return direction === 'SOUTHBOUND';
+  return direction === 'WESTBOUND';
+}
+
+function headingBetween(from: Station, to: Station): number {
+  const dLng = to.lng - from.lng;
+  const dLat = to.lat - from.lat;
+  return ((Math.atan2(dLng, dLat) * 180) / Math.PI + 360) % 360;
+}
+
+function speedForProgress(progress: number, atStation: boolean): number {
+  if (atStation) return 0;
+  if (progress < 0.22) return 24 + progress * 190;
+  if (progress > 0.76) return Math.max(12, 78 * (1 - (progress - 0.76) / 0.24));
+  return 70 + Math.sin(progress * Math.PI) * 8;
+}
+
+function getSegment(line: MetroLine, currentStationId: string, direction: TrainStatus['direction']) {
+  const stations = STATIONS[line];
+  let currentIdx = Math.max(0, stations.findIndex((station) => station.id === currentStationId));
+  let forward = isForwardDirection(line, direction);
+  let nextIdx = currentIdx + (forward ? 1 : -1);
+
+  if (nextIdx >= stations.length) {
+    forward = false;
+    nextIdx = currentIdx - 1;
+  } else if (nextIdx < 0) {
+    forward = true;
+    nextIdx = currentIdx + 1;
+  }
+
+  currentIdx = Math.max(0, Math.min(stations.length - 1, currentIdx));
+  nextIdx = Math.max(0, Math.min(stations.length - 1, nextIdx));
+
+  return {
+    current: stations[currentIdx],
+    next: stations[nextIdx],
+    direction: directionFor(line, forward),
+  };
+}
+
 function createMockTrains(): TrainStatus[] {
   const now = Date.now();
   return [
@@ -133,28 +180,61 @@ function createMockTrains(): TrainStatus[] {
 }
 
 function jitterTrain(train: TrainStatus): TrainStatus {
-  const speedDelta = (Math.random() - 0.5) * 6;
-  const newSpeed = Math.max(0, Math.min(85, train.telemetry.speed_kmh + speedDelta));
-  const isBraking = train.position.progress > 0.75 && !train.at_station;
+  const segment = getSegment(train.line, train.position.current_station_id, train.direction);
+
+  if (train.at_station) {
+    const dwellRemaining = Math.max(0, train.next_station_eta_seconds - 1);
+    if (dwellRemaining > 0) {
+      return {
+        ...train,
+        telemetry: {
+          ...train.telemetry,
+          speed_kmh: 0,
+          motor_current_amps: Math.round((18 + Math.random() * 6) * 10) / 10,
+          door_status: 'OPEN',
+        },
+        next_station_eta_seconds: dwellRemaining,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  const baseProgress = train.at_station ? 0 : train.position.progress;
+  const targetSpeed = speedForProgress(baseProgress, false);
+  const newSpeed = Math.max(0, Math.min(85, targetSpeed + (Math.random() - 0.5) * 3.2));
+  const isBraking = baseProgress > 0.76;
   const tempDelta = isBraking ? Math.random() * 1.5 : -Math.random() * 0.3;
   const newTemp = Math.max(40, Math.min(90, train.telemetry.regen_braking_temp + tempDelta));
-  const energyDelta = isBraking ? Math.random() * 0.15 : 0;
-  const progressDelta = train.at_station ? 0 : (newSpeed / 3600) * 0.0005;
-  let newProgress = Math.min(1, train.position.progress + progressDelta);
+  const energyDelta = isBraking ? 0.08 + Math.random() * 0.22 : 0;
+  const progressDelta = Math.max(0.012, (newSpeed / 80) * 0.032);
+  let newProgress = Math.min(1, baseProgress + progressDelta);
 
-  let newAtStation = train.at_station;
+  let newAtStation = false;
   let newSpeedFinal = newSpeed;
+  let nextSegment = segment;
 
-  if (newProgress >= 0.99 && !train.at_station) {
+  if (newProgress >= 0.99) {
     newAtStation = true;
     newProgress = 0;
     newSpeedFinal = 0;
+    nextSegment = getSegment(train.line, segment.next.id, segment.direction);
   }
+
+  const current = newAtStation ? segment.next : segment.current;
+  const next = newAtStation ? nextSegment.next : segment.next;
+  const lat = current.lat + (next.lat - current.lat) * newProgress;
+  const lng = current.lng + (next.lng - current.lng) * newProgress;
+  const inTunnel = train.line === 'line3' && !newAtStation && current.id === 'ST-02' && next.id === 'ST-03';
 
   return {
     ...train,
+    direction: newAtStation ? nextSegment.direction : segment.direction,
     position: {
-      ...train.position,
+      lat,
+      lng,
+      heading: headingBetween(current, next),
+      current_station_id: current.id,
+      next_station_id: next.id,
       progress: newProgress,
     },
     telemetry: {
@@ -165,8 +245,10 @@ function jitterTrain(train: TrainStatus): TrainStatus {
       motor_current_amps: Math.round((newSpeedFinal * 8 + (Math.random() * 20 - 10)) * 10) / 10,
       door_status: newAtStation ? 'OPEN' : 'CLOSED',
     },
+    is_in_tunnel: inTunnel,
+    comms_mode: inTunnel ? 'TUNNEL_RELAY' : 'NORMAL',
     at_station: newAtStation,
-    next_station_eta_seconds: newAtStation ? Math.max(0, train.next_station_eta_seconds - 1) : Math.round((1 - newProgress) * 120 + Math.random() * 20),
+    next_station_eta_seconds: newAtStation ? 15 : Math.round((1 - newProgress) * 120 + Math.random() * 20),
     timestamp: new Date().toISOString(),
   };
 }

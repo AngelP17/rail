@@ -219,7 +219,7 @@ function RouteLine({
             positions={normalRoute}
             pathOptions={lineStyle}
           />
-          {/* Tunnel section (dashed purple line) */}
+          {/* Tunnel section (dashed cyan line) */}
           {tunnelRoute.length > 1 && (
             <>
               <Polyline

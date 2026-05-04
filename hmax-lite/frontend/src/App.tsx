@@ -100,6 +100,18 @@ function Dashboard() {
         },
       );
 
+      ScrollTrigger.matchMedia({
+        '(min-width: 1024px)': () => {
+          ScrollTrigger.create({
+            trigger: '.command-section',
+            start: 'top top',
+            end: 'bottom bottom',
+            pin: '.pin-copy',
+            pinSpacing: false,
+          });
+        },
+      });
+
     },
     { scope: rootRef },
   );
@@ -118,7 +130,7 @@ function Dashboard() {
   }));
 
   const revealText =
-    'A living operations layer for Panama Metro telemetry, built to make fleet motion, tunnel relay behavior, and B-CHOP recovery feel immediate instead of buried in generic dashboard panels.';
+    'A compact operations layer for Panama Metro telemetry, built to keep fleet motion, tunnel relay behavior, and B-CHOP recovery visible from the same control surface.';
 
   return (
     <main ref={rootRef} className="relative w-full max-w-full overflow-x-hidden bg-[#07090d] text-white">
@@ -141,7 +153,7 @@ function Dashboard() {
             <span className="hidden text-left sm:block">
               <span className="block text-sm font-semibold tracking-tight">HMAX-Lite</span>
               <span className="block font-mono text-[10px] uppercase tracking-[0.28em] text-white/45">
-                Panama OCC
+                Panama control
               </span>
             </span>
           </button>
@@ -180,27 +192,27 @@ function Dashboard() {
         <div className="mx-auto grid max-w-7xl items-end gap-12 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="hero-copy">
             <p className="mb-8 max-w-lg font-mono text-xs uppercase tracking-[0.34em] text-[#d7ff5f]">
-              Live rail digital twin for tunnel, energy, and fleet control
+              Live rail digital twin for fleet, tunnel, and energy control
             </p>
             <h1 className="max-w-6xl text-[clamp(3.25rem,7vw,7.9rem)] font-black leading-[0.86] tracking-[-0.08em] text-white">
-              Command Panama Metro like a cinematic operations room.
+              Panama Metro digital twin.
             </h1>
             <p className="mt-8 max-w-2xl text-lg leading-8 text-white/62 md:text-xl">
-              A redesigned front end with editorial scale, live geospatial telemetry, B-CHOP recovery signals, and an OCC cockpit that finally feels engineered.
+              A concise operations surface for live geospatial telemetry, B-CHOP recovery, train movement, and Line 3 tunnel relay behavior.
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <a
                 href="#operations"
                 className="group inline-flex items-center justify-center gap-3 rounded-full bg-white px-7 py-4 text-sm font-bold text-black transition-transform duration-500 hover:scale-[1.04]"
               >
-                Open live command
+                Open command view
                 <ArrowUpRight className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1" />
               </a>
               <a
                 href="#briefing"
                 className="inline-flex items-center justify-center rounded-full border border-white/18 bg-white/8 px-7 py-4 text-sm font-bold text-white backdrop-blur-xl transition-colors duration-500 hover:bg-white/14"
               >
-                View system briefing
+                View operating model
               </a>
             </div>
           </div>
@@ -213,7 +225,7 @@ function Dashboard() {
             />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,transparent_0%,rgba(0,0,0,0.15)_28%,rgba(0,0,0,0.86)_78%)]" />
             <div className="absolute inset-x-7 top-7 flex items-center justify-between rounded-full border border-white/12 bg-black/35 px-4 py-3 backdrop-blur-xl">
-              <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Relay map</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Line 3 tunnel</span>
               <span className="h-2 w-2 rounded-full bg-[#d7ff5f] shadow-[0_0_24px_rgba(215,255,95,0.8)]" />
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-7">
@@ -244,10 +256,10 @@ function Dashboard() {
         <div className="mx-auto max-w-7xl">
           <div className="mb-16 flex flex-col justify-between gap-8 md:flex-row md:items-end">
             <h2 className="max-w-4xl text-[clamp(2.6rem,5vw,5.8rem)] font-black leading-[0.92] tracking-[-0.07em]">
-              Dense signals, zero dashboard filler.
+              Every panel earns its place.
             </h2>
             <p className="max-w-md text-lg leading-8 text-white/58">
-              The interface now behaves like a command surface: line filters are tactile, signal states are visual, and the content hierarchy has a clear operational rhythm.
+              The system keeps route state, train state, energy recovery, and communications mode visible without decorative console clutter.
             </p>
           </div>
 
@@ -255,36 +267,36 @@ function Dashboard() {
             <FeatureCard
               className="lg:col-span-5"
               icon={<MapPinned />}
-              title="Geospatial command layer"
-              body="Routes, stations, tunnel states, and train positions sit inside a designed cockpit rather than a raw map frame."
+              title="Network map"
+              body="Routes, stations, tunnel boundaries, and train positions share one readable map surface."
               imageSeed="metro-geospatial"
             />
             <FeatureCard
               className="lg:col-span-4"
               icon={<BatteryCharging />}
-              title="B-CHOP recovery readout"
-              body="Energy regeneration is promoted into the visual language of the page, not hidden in low-contrast telemetry rows."
+              title="B-CHOP recovery"
+              body="Regenerative braking, recovered energy, and brake temperature remain visible during inspection."
               imageSeed="regenerative-braking"
             />
             <FeatureCard
               className="lg:col-span-3"
               icon={<Waves />}
-              title="Tunnel relay behavior"
-              body="Line 3’s dead-zone logic reads as a first-class operational state."
+              title="Tunnel relay"
+              body="Line 3 trains expose tunnel mode and communications relay state as operational signals."
               imageSeed="canal-tunnel"
             />
             <FeatureCard
               className="lg:col-span-7"
               icon={<ShieldCheck />}
-              title="SCADA polish without the template smell"
-              body="Wide typography, grain, glass, radial washes, and restrained color replace the flat generic panel stack."
+              title="Concise control surface"
+              body="The design favors large telemetry, restrained color, and stable map context over decorative UI chrome."
               imageSeed="industrial-command"
             />
             <FeatureCard
               className="lg:col-span-5"
               icon={<Gauge />}
               title="Motion with purpose"
-              body="GSAP drives pinned copy, scrubbed text reveals, marquee movement, and image scale transitions tied to the operator’s scroll."
+              body="Scroll motion supports orientation while the live control view keeps high-frequency information steady."
               imageSeed="motion-dashboard"
             />
           </div>
@@ -319,14 +331,14 @@ function Dashboard() {
       </section>
 
       <section id="operations" className="command-section relative z-10 px-5 py-32 md:px-10 md:py-48 lg:px-16">
-        <div className="mx-auto grid max-w-7xl gap-10">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[410px_minmax(0,1fr)]">
           <aside className="pin-copy h-fit">
-            <p className="font-mono text-xs uppercase tracking-[0.34em] text-[#d7ff5f]">Live command cockpit</p>
+            <p className="font-mono text-xs uppercase tracking-[0.34em] text-[#d7ff5f]">Operations view</p>
             <h2 className="mt-6 text-[clamp(2.8rem,5.7vw,6.5rem)] font-black leading-[0.88] tracking-[-0.08em]">
-              The map finally has a stage.
+              Map, fleet, telemetry.
             </h2>
             <p className="mt-7 max-w-md text-lg leading-8 text-white/56">
-              Select lines from the rail accordions, inspect fleet state, and drill into train telemetry without losing the broader network context.
+              Select a corridor, inspect fleet state, and drill into train telemetry without losing the broader network context.
             </p>
 
             <div className="mt-10 flex flex-col gap-3">
@@ -408,16 +420,16 @@ function Dashboard() {
       <footer className="relative z-10 px-5 pb-12 pt-16 md:px-10 lg:px-16">
         <div className="mx-auto flex max-w-7xl flex-col gap-8 rounded-[2rem] border border-white/12 bg-white/[0.04] p-8 backdrop-blur-2xl md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-white/42">HMAX-Lite front-end refresh</p>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-white/42">HMAX-Lite simulator</p>
             <h2 className="mt-4 max-w-3xl text-[clamp(2.4rem,4vw,4.8rem)] font-black leading-[0.9] tracking-[-0.07em]">
-              Built for demo rooms, not template galleries.
+              A concise control surface for a living rail simulation.
             </h2>
           </div>
           <a
             href="#operations"
             className="inline-flex items-center justify-center rounded-full bg-[#d7ff5f] px-7 py-4 text-sm font-black text-black transition-transform duration-500 hover:scale-[1.04]"
           >
-            Return to cockpit
+            Return to command
           </a>
         </div>
       </footer>

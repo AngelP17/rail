@@ -9,7 +9,7 @@
 | **Python** | 3.11+ | Backend API server |
 | **Node.js** | 18+ | Frontend dev server |
 | **npm** | 9+ | Package management |
-| **Docker** *(optional)* | 20+ | Container deployment |
+| **Docker + Docker Compose** *(optional)* | Docker 20+ / Compose v2 | Container deployment |
 
 ---
 
@@ -38,6 +38,12 @@ python3 -m uvicorn main:app --reload --port 8000
 cd frontend
 npm install
 npm run dev
+```
+
+Optional mock-only frontend mode:
+
+```bash
+VITE_USE_MOCK=true npm run dev
 ```
 
 ---
@@ -123,7 +129,8 @@ You should see the Operations Dashboard with a map displaying all three metro li
 | `npm run dev` | `/frontend` | Start dev server with HMR |
 | `npm run build` | `/frontend` | Production build |
 | `npm run lint` | `/frontend` | Run ESLint |
-| `uvicorn main:app --reload` | `/backend` | Start API with auto-reload |
+| `python3 -m uvicorn main:app --reload --port 8000` | `/backend` | Start API with auto-reload |
+| `python3 -m compileall .` | `/backend` | Compile Python files and catch syntax errors |
 
 ---
 
@@ -179,6 +186,12 @@ pip install -r requirements.txt
 rm -rf node_modules package-lock.json
 npm install
 ```
+
+## Known Gaps
+
+- No dedicated backend unit test command is present.
+- No Prettier or formatter command is defined in `frontend/package.json`.
+- CI configuration is not present in this repository.
 
 ---
 

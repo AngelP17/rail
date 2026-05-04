@@ -8,38 +8,40 @@ HMAX-Lite is a real-time Digital Twin simulation for the Panama Metro system cov
 
 ```mermaid
 flowchart TB
-    subgraph Docker["Docker Compose Environment"]
-        subgraph Client["Browser (Client)"]
-            subgraph UI["React 18 + TypeScript + Tailwind CSS"]
-                HD["Header: System Status + Line Selector"]
-                MV["Map View: Leaflet - 3 Lines, 39 Stations, 13 Trains"]
-                TL["Train List: Grouped by Line with Status"]
-                TS["Telemetry Sidebar: Speed Gauge, Energy Chart, Temp Gauge, Route Progress"]
-            end
-            TQ["TanStack Query (1s polling)"]
-            MD["Mock Data Layer: Realistic offline telemetry"]
+    subgraph Runtime["Docker Compose or local dev"]
+        subgraph Frontend["Frontend: React 18 + TypeScript"]
+            App["App shell\nAIDA page + operations cockpit"]
+            Query["TanStack Query\n1s polling, retry once"]
+            Mock["Mock telemetry fallback\nroute progress, dwell, reversal, tunnel relay"]
+            UI["Fleet rail + Leaflet map + telemetry sidebar"]
         end
-        
-        Client -->|"HTTP/SSE (1s polling)"| Backend
-        MD -.->|"Fallback when API offline"| Client
-        
-        subgraph Backend["Backend (FastAPI)"]
-            subgraph Engine["Train Simulator Engine"]
-                PM["Physics Model: Haversine, Interpolation, Accel/Decel"]
-                TGN["Telemetry Gen: Speed, B-CHOP, Energy, Temp"]
-                GF["Geofencing: Tunnel Detection, Comms Mode"]
-                ML["Multi-Line: Line 1 (4 trains), Line 2 (4 trains), Line 3 (5 trains)"]
-            end
-            SD["Station Data: 39 stations across 3 lines"]
-            EP["API: /api/trains, /api/stations, /api/stream"]
+
+        subgraph Backend["Backend: FastAPI"]
+            API["REST endpoints\n/health, /api/lines, /api/trains, /api/stations, /api/stream"]
+            Engine["Train simulator\nHaversine, interpolation, accel, decel"]
+            Telemetry["Telemetry model\nspeed, motor current, B-CHOP, temp, doors"]
+            Geofence["Line 3 tunnel geofence\nTUNNEL_RELAY mode"]
+            Stations["Station data\n39 stations across 3 lines"]
         end
     end
-    
-    style Docker fill:#1a1a2e,stroke:#16213e,color:#fff
-    style Client fill:#162447,stroke:#00d9ff,color:#fff
-    style Backend fill:#0f3460,stroke:#e94560,color:#fff
-    style Engine fill:#1f4068,stroke:#1b1b2f,color:#fff
-    style UI fill:#1f4068,stroke:#00d9ff,color:#fff
+
+    App --> Query --> UI
+    Query -->|"HTTP"| API
+    Query -.->|"API unavailable or VITE_USE_MOCK=true"| Mock
+    Mock --> UI
+    API --> Engine
+    Engine --> Stations
+    Engine --> Telemetry
+    Engine --> Geofence
+    Telemetry --> API
+    Geofence --> API
+
+    classDef shell fill:#0f172a,stroke:#22d3ee,color:#fff
+    classDef service fill:#111827,stroke:#34d399,color:#fff
+    classDef signal fill:#111827,stroke:#fbbf24,color:#fff
+    class App,Query,UI,Mock shell
+    class API,Engine,Stations service
+    class Telemetry,Geofence signal
 ```
 
 ## Component Details
@@ -47,9 +49,9 @@ flowchart TB
 ### Backend: Train Simulator (`simulator.py`)
 
 **Tech Stack:**
-- **Python 3.14+**
-- **FastAPI 0.128+**
-- **Pydantic v2** (Strict data validation)
+- **Python 3.11+** (Docker uses `python:3.11-slim`)
+- **FastAPI**
+- **Pydantic** (Strict data validation)
 - **SSE-Starlette** (Real-time events)
 
 The physics engine simulates realistic train behavior:
@@ -63,10 +65,11 @@ The physics engine simulates realistic train behavior:
 
 ```mermaid
 xychart-beta
-    title "Trapezoidal Velocity Profile"
+    title "Segment Velocity and Regeneration"
     x-axis "Station Progress %" [0, 25, 50, 75, 100]
-    y-axis "Speed (km/h)" 0 --> 90
-    line [0, 80, 80, 80, 0]
+    y-axis "Speed km/h / Regen %" 0 --> 100
+    line "Speed" [0, 80, 80, 80, 0]
+    line "B-CHOP" [0, 0, 0, 40, 100]
 ```
 
 - 0-25%: Acceleration phase
@@ -84,7 +87,7 @@ xychart-beta
 - When in tunnel:
   - `is_in_tunnel: true`
   - `comms_mode: "TUNNEL_RELAY"`
-  - UI shows purple indicators
+  - UI shows cyan tunnel indicators
 
 ### Frontend: Operations Dashboard
 
@@ -100,30 +103,38 @@ xychart-beta
 **Component Hierarchy:**
 
 ```mermaid
-flowchart TB
-    App --> QCP[QueryClientProvider]
-    QCP --> Dashboard
-    Dashboard --> Header["Header: System Status + Line Selector"]
-    Dashboard --> TrainList["TrainList: Left sidebar, grouped by line"]
-    Dashboard --> Map["Map: Center, Leaflet with 3 routes"]
-    Dashboard --> Telemetry["TelemetrySidebar: Right panel"]
-    
-    Map --> TileLayer["TileLayer: CartoDB Dark Matter"]
-    Map --> Polyline["Polyline: 3 route lines + tunnel"]
-    Map --> CircleMarker["CircleMarker: 39 stations"]
-    Map --> TrainMarker["TrainMarker: 13 trains with SVG icons"]
-    
-    Telemetry --> StatusBanner["Status Banner: Normal/Braking/Tunnel/Station"]
-    Telemetry --> SpeedGauge["Speed Gauge: SVG circular 0-100 km/h"]
-    Telemetry --> BChopPanel["B-CHOP Panel: Energy chart + stats"]
-    Telemetry --> TempGauge["Temp Gauge: Brake system 40-90 C"]
-    Telemetry --> RouteInfo["Route Info: Progress bar + ETA"]
-    Telemetry --> AdditionalInfo["Additional Info: Direction, Mode, Doors, Motor"]
-    
-    style App fill:#1a1a2e,stroke:#e94560,color:#fff
-    style Dashboard fill:#162447,stroke:#00d9ff,color:#fff
-    style Map fill:#0f3460,stroke:#22c55e,color:#fff
-    style Telemetry fill:#0f3460,stroke:#3b82f6,color:#fff
+flowchart LR
+    Data["useTrains hook\nquery, selection, history"] --> Metrics["Hero and KPI metrics"]
+    Data --> Lines["Line selector\nall, line1, line2, line3"]
+    Data --> Fleet["TrainList\nstatus counts + train cards"]
+    Data --> Map["Map\nroutes, stations, train markers"]
+    Data --> Detail["TelemetrySidebar\nselected train details"]
+
+    Lines --> Data
+    Fleet -->|"select train"| Data
+    Map -->|"select train"| Data
+    Detail --> Gauges["Speed gauge\nEnergy chart\nBrake temperature"]
+
+    classDef state fill:#111827,stroke:#22d3ee,color:#fff
+    classDef view fill:#0f172a,stroke:#94a3b8,color:#fff
+    classDef signal fill:#111827,stroke:#34d399,color:#fff
+    class Data,Lines state
+    class Metrics,Fleet,Map,Detail view
+    class Gauges signal
+```
+
+**Mock telemetry loop:**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Moving
+    Moving --> Braking: progress > 76%
+    Braking --> AtStation: progress reaches 100%
+    AtStation --> Moving: dwell countdown ends
+    Moving --> TunnelRelay: Line 3, Balboa to Panama Pacifico
+    TunnelRelay --> Moving: exits tunnel segment
+    AtStation --> ReverseDirection: terminal reached
+    ReverseDirection --> Moving
 ```
 
 **Data Flow:**
@@ -134,6 +145,11 @@ flowchart TB
 5. History accumulated for charts (60 data points max per train)
 6. Line selector filters all views: map, fleet list, and system metrics
 
+**Offline/mock mode:**
+- The API client falls back to frontend mock data if the backend is unavailable.
+- `VITE_USE_MOCK=true` forces mock telemetry for frontend-only demos.
+- Mock trains advance through station segments, dwell at stations, reverse at terminals, and surface Line 3 tunnel relay state.
+
 ## Key Engineering Decisions
 
 ### 1. Polling vs WebSockets
@@ -143,8 +159,11 @@ Chose polling (1s interval) for simplicity and robust connection handling in MVP
 TanStack Query handles server state with automatic caching and background updates. Local state (selection, history) managed with React hooks.
 
 ### 3. Dependency Management
-- **Backend:** Uses `venv` with unpinned `requirements.txt` to ensure compatibility with latest Python versions (tested on 3.14).
+- **Backend:** Uses `venv` with unpinned `requirements.txt`; Docker builds on Python 3.11.
 - **Frontend:** Standard `npm` workflow with modern Vite scaffolding.
+
+### 4. Visual System
+The frontend is intentionally styled as an operations-control surface rather than a generic SaaS landing page. Preserve large map context, readable telemetry, line-color semantics, GSAP scroll motion, and high-contrast controls.
 
 ## Performance Considerations
 
