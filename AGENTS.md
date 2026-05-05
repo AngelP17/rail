@@ -48,6 +48,14 @@ curl http://localhost:8000/api/trains
 python3 -m compileall .
 ```
 
+Testing:
+
+```bash
+cd hmax-lite/backend
+source venv/bin/activate
+pytest -v
+```
+
 ### Frontend
 
 ```bash
@@ -56,12 +64,27 @@ npm install
 npm run dev
 npm run build
 npm run lint
+npm run format       # Prettier formatting
+npm run format:check # Prettier check (CI)
+npm run analyze      # Bundle size visualizer
 ```
 
 Useful environment variables:
 
 - `VITE_API_URL`: backend URL, default `http://localhost:8000`.
 - `VITE_USE_MOCK=true`: force frontend mock telemetry fallback.
+
+### Task Runner (Makefile)
+
+```bash
+make help          # Show all available commands
+make up            # Docker Compose full stack
+make dev-backend   # Backend dev server
+make dev-frontend  # Frontend dev server
+make verify        # Full CI pipeline (lint + compile + build + test)
+make test          # Run all tests
+make clean         # Clean build artifacts
+```
 
 ## Conventions and Constraints
 
@@ -73,6 +96,11 @@ Useful environment variables:
 - Avoid cheap meta labels such as `SECTION 01`, `QUESTION 05`, or filler status chips that do not carry real operational meaning.
 - Do not edit generated or dependency folders: `node_modules/`, `dist/`, `backend/venv/`, `__pycache__/`, `.DS_Store`, screenshots unless intentionally refreshing documentation assets.
 - The root `.gitignore` intentionally allows `hmax-lite/.claude/skills`; do not remove that exception unless asked.
+- The frontend supports two view modes: **Simulation Board** (custom SVG, default) and **Map** (Leaflet). Preserve both when making visual changes.
+- `ErrorBoundary` wraps the entire dashboard. Any new feature that might throw during render should be tested against it.
+- Interactive SVG elements in `RailSimulationBoard` must have `role`, `aria-label`, `tabIndex`, and keyboard handlers (`Enter`/`Space`).
+- Backend uses structured logging via `logging.basicConfig()`. Use the module logger (`logger = logging.getLogger(__name__)`) for new log statements.
+- CI runs via GitHub Actions (`.github/workflows/ci.yml`). The workflow lints frontend, builds frontend, compiles backend, and runs backend tests.
 
 ## Documentation Expectations
 

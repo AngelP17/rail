@@ -6,11 +6,16 @@ import type {
   Station,
   LineInfo,
   TelemetryHistoryPoint,
+  OperationalEvent,
+  OperatorPrompt,
+  ScenarioMode,
+  SpeedPhase,
 } from '../types/train';
+import { SCENARIO_CONFIG } from '../types/train';
 
 const STATIONS: Record<MetroLine, Station[]> = {
   line1: [
-    { id: 'L1-01', name: 'San Isidro (Terminal)', lat: 9.0824, lng: -79.4856, station_type: 'Terminal', is_tunnel_boundary: false, line: 'line1' },
+    { id: 'L1-01', name: 'San Isidro', lat: 9.0824, lng: -79.4856, station_type: 'Terminal', is_tunnel_boundary: false, line: 'line1' },
     { id: 'L1-02', name: 'Villa Zaita', lat: 9.0702, lng: -79.4901, station_type: 'Elevated', is_tunnel_boundary: false, line: 'line1' },
     { id: 'L1-03', name: 'El Crisol', lat: 9.0605, lng: -79.4938, station_type: 'Elevated', is_tunnel_boundary: false, line: 'line1' },
     { id: 'L1-04', name: 'Brisas del Golf', lat: 9.0489, lng: -79.4982, station_type: 'Elevated', is_tunnel_boundary: false, line: 'line1' },
@@ -23,11 +28,11 @@ const STATIONS: Record<MetroLine, Station[]> = {
     { id: 'L1-11', name: 'Via Argentina', lat: 8.9855, lng: -79.5232, station_type: 'Underground', is_tunnel_boundary: false, line: 'line1' },
     { id: 'L1-12', name: 'Fernandez de Cordoba', lat: 8.9778, lng: -79.5265, station_type: 'Underground', is_tunnel_boundary: false, line: 'line1' },
     { id: 'L1-13', name: 'El Ingenio', lat: 8.9712, lng: -79.5295, station_type: 'Underground', is_tunnel_boundary: false, line: 'line1' },
-    { id: 'L1-14', name: '12 de Octubre (Interchange)', lat: 8.9835, lng: -79.5205, station_type: 'Underground', is_tunnel_boundary: false, line: 'line1' },
-    { id: 'L1-15', name: 'Albrook (Interchange)', lat: 8.9763, lng: -79.5475, station_type: 'At-Grade', is_tunnel_boundary: false, line: 'line1' },
+    { id: 'L1-14', name: '12 de Octubre', lat: 8.9835, lng: -79.5205, station_type: 'Underground', is_tunnel_boundary: false, line: 'line1' },
+    { id: 'L1-15', name: 'Albrook', lat: 8.9763, lng: -79.5475, station_type: 'At-Grade', is_tunnel_boundary: false, line: 'line1' },
   ],
   line2: [
-    { id: 'L2-01', name: 'Nuevo Tocumen (Terminal)', lat: 9.0525, lng: -79.3802, station_type: 'Terminal', is_tunnel_boundary: false, line: 'line2' },
+    { id: 'L2-01', name: 'Nuevo Tocumen', lat: 9.0525, lng: -79.3802, station_type: 'Terminal', is_tunnel_boundary: false, line: 'line2' },
     { id: 'L2-02', name: '24 de Diciembre', lat: 9.0502, lng: -79.4025, station_type: 'Elevated', is_tunnel_boundary: false, line: 'line2' },
     { id: 'L2-03', name: 'Nuevo Tocumen', lat: 9.0485, lng: -79.4152, station_type: 'Elevated', is_tunnel_boundary: false, line: 'line2' },
     { id: 'L2-04', name: 'Pacora', lat: 9.0458, lng: -79.4285, station_type: 'Elevated', is_tunnel_boundary: false, line: 'line2' },
@@ -39,10 +44,10 @@ const STATIONS: Record<MetroLine, Station[]> = {
     { id: 'L2-10', name: '5 de Mayo', lat: 9.0125, lng: -79.4925, station_type: 'Underground', is_tunnel_boundary: false, line: 'line2' },
     { id: 'L2-11', name: 'El Carmen', lat: 9.0052, lng: -79.5025, station_type: 'Underground', is_tunnel_boundary: false, line: 'line2' },
     { id: 'L2-12', name: 'Via Espana', lat: 8.9985, lng: -79.5125, station_type: 'Underground', is_tunnel_boundary: false, line: 'line2' },
-    { id: 'L2-13', name: 'Albrook (Interchange)', lat: 8.9763, lng: -79.5475, station_type: 'At-Grade', is_tunnel_boundary: false, line: 'line2' },
+    { id: 'L2-13', name: 'Albrook', lat: 8.9763, lng: -79.5475, station_type: 'At-Grade', is_tunnel_boundary: false, line: 'line2' },
   ],
   line3: [
-    { id: 'ST-01', name: 'Albrook (Terminal/Interchange)', lat: 8.9763, lng: -79.5475, station_type: 'Terminal', is_tunnel_boundary: false, line: 'line3' },
+    { id: 'ST-01', name: 'Albrook', lat: 8.9763, lng: -79.5475, station_type: 'Terminal', is_tunnel_boundary: false, line: 'line3' },
     { id: 'ST-02', name: 'Balboa', lat: 8.9594, lng: -79.5573, station_type: 'Underground', is_tunnel_boundary: true, line: 'line3' },
     { id: 'ST-03', name: 'Panama Pacifico', lat: 8.9600, lng: -79.5900, station_type: 'Elevated', is_tunnel_boundary: true, line: 'line3' },
     { id: 'ST-04', name: 'Loma Cova', lat: 8.9550, lng: -79.6050, station_type: 'Elevated', is_tunnel_boundary: false, line: 'line3' },
@@ -61,6 +66,73 @@ const LINES: LineInfo[] = [
   { id: 'line2', name: 'Line 2', color: '#22c55e', description: 'Nuevo Tocumen to Albrook', station_count: 13 },
   { id: 'line3', name: 'Line 3', color: '#3b82f6', description: 'Albrook to Ciudad del Futuro', station_count: 11 },
 ];
+
+// Event log storage
+let globalEvents: OperationalEvent[] = [];
+let eventIdCounter = 0;
+let activeScenario: ScenarioMode = 'normal';
+
+export function setMockScenario(scenario: ScenarioMode) {
+  activeScenario = scenario;
+}
+
+export function getMockScenario(): ScenarioMode {
+  return activeScenario;
+}
+
+function genEventId() {
+  return `evt-${++eventIdCounter}-${Date.now()}`;
+}
+
+function addEvent(event: Omit<OperationalEvent, 'id'>) {
+  const fullEvent: OperationalEvent = { ...event, id: genEventId() };
+  globalEvents.unshift(fullEvent);
+  if (globalEvents.length > 100) globalEvents = globalEvents.slice(0, 100);
+  return fullEvent;
+}
+
+export function getMockEvents(): OperationalEvent[] {
+  return globalEvents;
+}
+
+export function clearMockEvents() {
+  globalEvents = [];
+  eventIdCounter = 0;
+}
+
+function speedPhaseFor(speed: number, atStation: boolean, isBraking: boolean): SpeedPhase {
+  if (atStation) return 'dwell';
+  if (isBraking) return 'brake';
+  if (speed > 60) return 'cruise';
+  return 'accelerate';
+}
+
+function tunnelPhaseFor(line: MetroLine, currentId: string, nextId: string, progress: number): TrainStatus['tunnel_phase'] {
+  if (line !== 'line3') return 'none';
+  const isTunnelSegment = (currentId === 'ST-02' && nextId === 'ST-03') || (currentId === 'ST-03' && nextId === 'ST-02');
+  if (!isTunnelSegment) return 'none';
+  if (progress < 0.15) return 'approach';
+  if (progress > 0.85) return 'exit';
+  return 'inside';
+}
+
+function brakingPhaseFor(progress: number, atStation: boolean): TrainStatus['braking_phase'] {
+  if (atStation) return 'regen';
+  if (progress > 0.88) return 'heavy';
+  if (progress > 0.72) return 'initial';
+  return 'none';
+}
+
+function segmentName(current: Station, next: Station): string {
+  return `${current.name} → ${next.name}`;
+}
+
+function blockOccupancy(_line: MetroLine, _stationIdx: number, progress: number, scenario: ScenarioMode): number {
+  const config = SCENARIO_CONFIG[scenario];
+  const base = Math.min(1, progress + 0.1);
+  const variance = scenario === 'rush_hour' ? 0.3 : scenario === 'signal_hold' ? 0.5 : 0.1;
+  return Math.min(1, base + Math.random() * variance * config.train_spacing_factor);
+}
 
 function makeTrain(
   id: string,
@@ -82,6 +154,12 @@ function makeTrain(
   const next = stations[nextIdx];
   const lat = current.lat + (next.lat - current.lat) * progress;
   const lng = current.lng + (next.lng - current.lng) * progress;
+  const phase = speedPhaseFor(speed, atStation, isBraking);
+  const tunPhase = tunnelPhaseFor(line, current.id, next.id, progress);
+  const brPhase = brakingPhaseFor(progress, atStation);
+  const segName = segmentName(current, next);
+  const blockOcc = blockOccupancy(line, stationIdx, progress, activeScenario);
+  const dwellSec = atStation ? 15 + Math.round(Math.random() * 8) : 0;
 
   return {
     id,
@@ -107,9 +185,17 @@ function makeTrain(
     comms_mode: inTunnel ? 'TUNNEL_RELAY' : 'NORMAL',
     operating_mode: 'REVENUE',
     direction,
-    next_station_eta_seconds: atStation ? 12 : Math.round((1 - progress) * 120 + Math.random() * 30),
+    next_station_eta_seconds: atStation ? dwellSec : Math.round((1 - progress) * 120 + Math.random() * 30),
     at_station: atStation,
     timestamp: new Date().toISOString(),
+    speed_phase: phase,
+    current_segment_name: segName,
+    block_occupancy: blockOcc,
+    dwell_countdown_seconds: dwellSec,
+    braking_phase: brPhase,
+    tunnel_phase: tunPhase,
+    recent_events: [],
+    energy_recovered_session: energy,
   };
 }
 
@@ -129,11 +215,12 @@ function headingBetween(from: Station, to: Station): number {
   return ((Math.atan2(dLng, dLat) * 180) / Math.PI + 360) % 360;
 }
 
-function speedForProgress(progress: number, atStation: boolean): number {
+function speedForProgress(progress: number, atStation: boolean, scenario: ScenarioMode): number {
   if (atStation) return 0;
-  if (progress < 0.22) return 24 + progress * 190;
-  if (progress > 0.76) return Math.max(12, 78 * (1 - (progress - 0.76) / 0.24));
-  return 70 + Math.sin(progress * Math.PI) * 8;
+  const spacing = SCENARIO_CONFIG[scenario].train_spacing_factor;
+  if (progress < 0.22) return (24 + progress * 190) * spacing;
+  if (progress > 0.76) return Math.max(12, 78 * (1 - (progress - 0.76) / 0.24)) * spacing;
+  return (70 + Math.sin(progress * Math.PI) * 8) * spacing;
 }
 
 function getSegment(line: MetroLine, currentStationId: string, direction: TrainStatus['direction']) {
@@ -180,13 +267,139 @@ function createMockTrains(): TrainStatus[] {
   ];
 }
 
+function detectEvents(prev: TrainStatus, curr: TrainStatus): OperationalEvent[] {
+  const events: OperationalEvent[] = [];
+  const config = SCENARIO_CONFIG[activeScenario];
+  const freqMult = config.event_frequency_multiplier;
+
+  // Station departure
+  if (prev.at_station && !curr.at_station) {
+    events.push(addEvent({
+      timestamp: Date.now(),
+      type: 'departed',
+      train_id: curr.id,
+      line: curr.line,
+      message: `${curr.id} departed ${prev.position.current_station_id}`,
+      severity: 'info',
+      station_id: prev.position.current_station_id,
+    }));
+  }
+
+  // Station approach
+  if (!prev.at_station && curr.position.progress > 0.7 && prev.position.progress <= 0.7) {
+    events.push(addEvent({
+      timestamp: Date.now(),
+      type: 'station_approach',
+      train_id: curr.id,
+      line: curr.line,
+      message: `${curr.id} approaching ${curr.position.next_station_id}`,
+      severity: 'info',
+      station_id: curr.position.next_station_id,
+    }));
+  }
+
+  // Braking start
+  if (!prev.telemetry.b_chop_status && curr.telemetry.b_chop_status) {
+    events.push(addEvent({
+      timestamp: Date.now(),
+      type: 'braking',
+      train_id: curr.id,
+      line: curr.line,
+      message: `${curr.id} entering braking phase`,
+      severity: 'info',
+    }));
+    if (Math.random() < 0.4 * freqMult) {
+      events.push(addEvent({
+        timestamp: Date.now(),
+        type: 'bchop_active',
+        train_id: curr.id,
+        line: curr.line,
+        message: `B-CHOP active on ${curr.id}`,
+        severity: 'info',
+      }));
+    }
+  }
+
+  // Energy recovery spike
+  const energyDelta = curr.telemetry.energy_recovered_kwh - prev.telemetry.energy_recovered_kwh;
+  if (energyDelta > 0.15 * freqMult) {
+    events.push(addEvent({
+      timestamp: Date.now(),
+      type: 'energy_recovery',
+      train_id: curr.id,
+      line: curr.line,
+      message: `${curr.id} recovered ${energyDelta.toFixed(2)} kWh`,
+      severity: 'info',
+    }));
+  }
+
+  // Tunnel entry
+  if (!prev.is_in_tunnel && curr.is_in_tunnel) {
+    events.push(addEvent({
+      timestamp: Date.now(),
+      type: 'tunnel_entry',
+      train_id: curr.id,
+      line: curr.line,
+      message: `${curr.id} entered tunnel relay zone`,
+      severity: 'warning',
+    }));
+    events.push(addEvent({
+      timestamp: Date.now(),
+      type: 'comms_handoff',
+      train_id: curr.id,
+      line: curr.line,
+      message: `Comms handoff for ${curr.id} to tunnel relay`,
+      severity: 'warning',
+    }));
+  }
+
+  // Tunnel exit
+  if (prev.is_in_tunnel && !curr.is_in_tunnel) {
+    events.push(addEvent({
+      timestamp: Date.now(),
+      type: 'tunnel_exit',
+      train_id: curr.id,
+      line: curr.line,
+      message: `${curr.id} exited tunnel relay zone`,
+      severity: 'info',
+    }));
+  }
+
+  // Dwell complete
+  if (prev.at_station && !curr.at_station) {
+    events.push(addEvent({
+      timestamp: Date.now(),
+      type: 'dwell_complete',
+      train_id: curr.id,
+      line: curr.line,
+      message: `Dwell complete at ${prev.position.current_station_id}`,
+      severity: 'info',
+      station_id: prev.position.current_station_id,
+    }));
+  }
+
+  // Headway compression (rush hour)
+  if (activeScenario === 'rush_hour' && Math.random() < 0.05 * freqMult) {
+    events.push(addEvent({
+      timestamp: Date.now(),
+      type: 'headway_compressed',
+      train_id: curr.id,
+      line: curr.line,
+      message: `Headway compressed on ${curr.line}`,
+      severity: 'warning',
+    }));
+  }
+
+  return events;
+}
+
 function jitterTrain(train: TrainStatus): TrainStatus {
   const segment = getSegment(train.line, train.position.current_station_id, train.direction);
 
   if (train.at_station) {
     const dwellRemaining = Math.max(0, train.next_station_eta_seconds - 1);
     if (dwellRemaining > 0) {
-      return {
+      const updated: TrainStatus = {
         ...train,
         telemetry: {
           ...train.telemetry,
@@ -195,13 +408,17 @@ function jitterTrain(train: TrainStatus): TrainStatus {
           door_status: 'OPEN',
         },
         next_station_eta_seconds: dwellRemaining,
+        dwell_countdown_seconds: dwellRemaining,
+        speed_phase: 'dwell',
+        braking_phase: 'regen',
         timestamp: new Date().toISOString(),
       };
+      return updated;
     }
   }
 
   const baseProgress = train.at_station ? 0 : train.position.progress;
-  const targetSpeed = speedForProgress(baseProgress, false);
+  const targetSpeed = speedForProgress(baseProgress, false, activeScenario);
   const newSpeed = Math.max(0, Math.min(85, targetSpeed + (Math.random() - 0.5) * 3.2));
   const isBraking = baseProgress > 0.76;
   const tempDelta = isBraking ? Math.random() * 1.5 : -Math.random() * 0.3;
@@ -227,7 +444,7 @@ function jitterTrain(train: TrainStatus): TrainStatus {
   const lng = current.lng + (next.lng - current.lng) * newProgress;
   const inTunnel = train.line === 'line3' && !newAtStation && current.id === 'ST-02' && next.id === 'ST-03';
 
-  return {
+  const updated: TrainStatus = {
     ...train,
     direction: newAtStation ? nextSegment.direction : segment.direction,
     position: {
@@ -251,7 +468,20 @@ function jitterTrain(train: TrainStatus): TrainStatus {
     at_station: newAtStation,
     next_station_eta_seconds: newAtStation ? 15 : Math.round((1 - newProgress) * 120 + Math.random() * 20),
     timestamp: new Date().toISOString(),
+    speed_phase: speedPhaseFor(newSpeedFinal, newAtStation, isBraking),
+    current_segment_name: segmentName(current, next),
+    block_occupancy: blockOccupancy(train.line, STATIONS[train.line].findIndex(s => s.id === current.id), newProgress, activeScenario),
+    dwell_countdown_seconds: newAtStation ? 15 : 0,
+    braking_phase: brakingPhaseFor(newProgress, newAtStation),
+    tunnel_phase: tunnelPhaseFor(train.line, current.id, next.id, newProgress),
+    energy_recovered_session: train.energy_recovered_session + energyDelta,
   };
+
+  // Detect and attach events
+  const events = detectEvents(train, updated);
+  updated.recent_events = events.slice(0, 5);
+
+  return updated;
 }
 
 export function getMockTrainListResponse(): TrainListResponse {
@@ -313,3 +543,85 @@ export function generateMockHistory(): TelemetryHistoryPoint[] {
     regen_braking_temp: 42 + Math.sin(i / 5) * 12 + Math.random() * 5,
   }));
 }
+
+// Generate operator prompts based on current state
+export function generateMockPrompts(trains: TrainStatus[]): OperatorPrompt[] {
+  const prompts: OperatorPrompt[] = [];
+  
+  trains.forEach(train => {
+    if (train.is_in_tunnel && train.tunnel_phase === 'inside') {
+      prompts.push({
+        id: `prompt-${train.id}-tunnel`,
+        timestamp: Date.now(),
+        train_id: train.id,
+        line: train.line,
+        message: `${train.id} in tunnel relay. Monitor comms handoff.`,
+        action: 'Watch relay state',
+        priority: 'medium',
+        acknowledged: false,
+      });
+    }
+    if (train.telemetry.b_chop_status && train.braking_phase === 'heavy') {
+      prompts.push({
+        id: `prompt-${train.id}-bchop`,
+        timestamp: Date.now(),
+        train_id: train.id,
+        line: train.line,
+        message: `B-CHOP peak on ${train.id} approaching ${train.position.next_station_id}`,
+        action: 'Verify regen temp',
+        priority: 'high',
+        acknowledged: false,
+      });
+    }
+    if (train.at_station && train.dwell_countdown_seconds > 18) {
+      prompts.push({
+        id: `prompt-${train.id}-dwell`,
+        timestamp: Date.now(),
+        train_id: train.id,
+        line: train.line,
+        message: `Extended dwell on ${train.id} at ${train.position.current_station_id}`,
+        action: 'Check platform status',
+        priority: 'low',
+        acknowledged: false,
+      });
+    }
+  });
+
+  // Line-level prompts
+  const line3Trains = trains.filter(t => t.line === 'line3');
+  const tunnelTrains = line3Trains.filter(t => t.is_in_tunnel);
+  if (tunnelTrains.length >= 2) {
+    prompts.push({
+      id: `prompt-line3-density`,
+      timestamp: Date.now(),
+      line: 'line3',
+      message: `High tunnel density: ${tunnelTrains.length} trains in relay zone`,
+      action: 'Adjust spacing',
+      priority: 'high',
+      acknowledged: false,
+    });
+  }
+
+  return prompts.slice(0, 6);
+}
+
+// Demo script configuration
+export interface DemoScriptStep {
+  duration: number;
+  description: string;
+  selectLine?: MetroLine;
+  selectTrainId?: string;
+  setScenario?: ScenarioMode;
+  zoomToTunnel?: boolean;
+  showTelemetry?: boolean;
+}
+
+export const DEMO_SCRIPT: DemoScriptStep[] = [
+  { duration: 3000, description: 'Initializing simulation...', selectLine: 'line3', setScenario: 'normal' },
+  { duration: 5000, description: 'Line 3 selected. Following tunnel corridor...', selectTrainId: 'LINE3-002', showTelemetry: true },
+  { duration: 6000, description: 'Signal blocks active. Train approaching Balboa...', zoomToTunnel: true },
+  { duration: 7000, description: 'Entering tunnel relay zone. Comms handoff in progress...', setScenario: 'tunnel_degraded' },
+  { duration: 5000, description: 'B-CHOP braking event detected near Albrook...', setScenario: 'bchop_peak' },
+  { duration: 6000, description: 'Energy recovery flowing to network battery...', showTelemetry: true },
+  { duration: 4000, description: 'System summary: all lines operational.', setScenario: 'normal' },
+];

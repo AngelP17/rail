@@ -10,11 +10,12 @@ HMAX-Lite is a real-time Digital Twin simulation for the Panama Metro system cov
 flowchart TB
     subgraph Runtime["Docker Compose or local dev"]
         subgraph Frontend["Frontend: React 18 + TypeScript + Vite"]
-            App["App shell\nAIDA page + operations cockpit"]
+            App["App shell\n2.5D OCC dispatch playfield"]
             Query["TanStack Query v5\n1s polling, retry once"]
             Mock["Mock telemetry fallback\nroute progress, dwell, reversal, tunnel relay"]
-            GSAP["GSAP ScrollTrigger\nhero fade, card stack, marquee, scrub reveal"]
-            UI["Fleet rail + Leaflet map + telemetry sidebar"]
+            Sim["Simulation layer\nscenarios, events, signal blocks, prompts"]
+            GSAP["GSAP + ScrollTrigger\nHUD panel entrance, pinned sections"]
+            UI["RailSimulationBoard + EventTimeline + Hero Inspector"]
         end
 
         subgraph Backend["Backend: FastAPI"]
@@ -29,9 +30,10 @@ flowchart TB
     App --> Query --> UI
     Query -->|"HTTP"| API
     Query -.->|"API unavailable or VITE_USE_MOCK=true"| Mock
-    Mock --> UI
+    Mock --> Sim
+    Sim --> UI
     App --> GSAP
-    GSAP -->|"scroll-triggered"| UI
+    GSAP -->|"panel entrance"| UI
     API --> Engine
     Engine --> Stations
     Engine --> Telemetry
@@ -168,18 +170,18 @@ flowchart LR
         Ops["Operations cockpit\nsidebar + map + telemetry"]
     end
 
-    subgraph Cockpit["Operations Cockpit"]
-        Sidebar["Line selector sidebar\nfiltered fleet list"]
-        Fleet["TrainList\nstatus counts + train cards"]
-        MapComp["Leaflet Map\nroutes, stations, markers"]
-        Telemetry["TelemetrySidebar\ngauges, charts, route thread"]
+    subgraph Cockpit["Dispatch Playfield"]
+        Sidebar["Left HUD\nline filter + scenario director + fleet stats"]
+        Board["RailSimulationBoard\nSVG rail corridors, train capsules, signal blocks, tunnel zone"]
+        Events["EventTimeline\nlive operational events strip"]
+        Inspector["Hero Inspector\nroute strip, speed phase, block occupancy, events"]
     end
 
     Hook -->|"trains, selection"| Nav
-    Hook -->|"active fleet"| Hero
-    Hook -->|"train data"| Fleet
-    Hook -->|"positions"| MapComp
-    Hook -->|"selected train"| Telemetry
+    Hook -->|"simulation frame"| Sidebar
+    Hook -->|"trains, blocks, scenario"| Board
+    Hook -->|"events"| Events
+    Hook -->|"selected train"| Inspector
 
     classDef state fill:#111827,stroke:#22d3ee,color:#fff
     classDef page fill:#0f172a,stroke:#94a3b8,color:#fff
@@ -188,6 +190,19 @@ flowchart LR
     class Nav,Hero,Bento,Accordion,Scrub,Stack,Marquee,Ops page
     class Sidebar,Fleet,MapComp,Telemetry ops
 ```
+
+**Simulation State Derivation (Frontend-Only):**
+
+The console derives richer UI state from existing `TrainStatus` objects without backend changes:
+
+| Derived State | Source | Visual Output |
+|---------------|--------|---------------|
+| `speed_phase` | speed + at_station + b_chop_status | Phase badges: accelerate / cruise / brake / dwell |
+| `tunnel_phase` | line + current/next station + progress | Tunnel approach / inside / exit highlighting |
+| `braking_phase` | progress + at_station | none / initial / heavy / regen indicators |
+| `block_occupancy` | progress + scenario factor | Signal block color: clear / approach / occupied / restricted |
+| `recent_events` | prev vs curr train comparison | Event timeline entries |
+| `operator_prompts` | train state + line density | Contextual decision cards |
 
 **Mock Telemetry State Machine:**
 
@@ -210,6 +225,27 @@ stateDiagram-v2
     note right of Braking: B-CHOP active, temp rising
     note right of TunnelRelay: comms_mode: TUNNEL_RELAY
 ```
+
+**Scenario Director:**
+
+Six simulation modes change visible state:
+- `normal` — standard operations
+- `rush_hour` — compressed headways, higher event frequency
+- `tunnel_degraded` — reduced comms capacity, intensified tunnel highlighting
+- `bchop_peak` — maximized regenerative braking events
+- `dwell_delay` — extended station stops
+- `signal_hold` — controlled block occupancy management
+
+**Flagship Demo Mode:**
+
+A one-click "Run Flagship Scenario" auto-sequences through:
+1. Select Line 3
+2. Follow LINE3-002 (tunnel train)
+3. Highlight signal blocks
+4. Trigger tunnel relay state
+5. Show B-CHOP braking event
+6. Log operational events to timeline
+7. End with system summary
 
 **Data Flow:**
 

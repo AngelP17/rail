@@ -1,7 +1,7 @@
 # HMAX-Lite: Panama Metro Digital Twin
 
 <p align="center">
-  <img src="hmax-lite/docs/dashboard-full.png" alt="HMAX-Lite Dashboard" width="800"/>
+  <img src="hmax-lite/docs/screenshots/dashboard-full.png" alt="HMAX-Lite Dashboard" width="800"/>
 </p>
 
 ## 🚝 Project Overview
@@ -49,7 +49,7 @@ flowchart LR
 ### Dashboard Screenshots
 
 <p align="center">
-  <img src="hmax-lite/docs/dashboard-full.png" alt="Full Dashboard - All Lines" width="800"/>
+  <img src="hmax-lite/docs/screenshots/dashboard-full.png" alt="Full Dashboard - All Lines" width="800"/>
 </p>
 
 <p align="center">
@@ -57,7 +57,7 @@ flowchart LR
 </p>
 
 <p align="center">
-  <img src="hmax-lite/docs/dashboard-telemetry.png" alt="Train Telemetry View" width="800"/>
+  <img src="hmax-lite/docs/screenshots/dashboard-telemetry.png" alt="Train Telemetry View" width="800"/>
 </p>
 
 <p align="center">
@@ -65,11 +65,19 @@ flowchart LR
 </p>
 
 <p align="center">
-  <img src="hmax-lite/docs/dashboard-line3.png" alt="Line 3 View" width="800"/>
+  <img src="hmax-lite/docs/screenshots/dashboard-line3.png" alt="Line 3 View" width="800"/>
 </p>
 
 <p align="center">
   <em>Line 3 filtered view showing tunnel detection and monorail fleet</em>
+</p>
+
+<p align="center">
+  <img src="hmax-lite/docs/screenshots/dashboard-map.png" alt="Geographic Map View" width="800"/>
+</p>
+
+<p align="center">
+  <em>Leaflet map view with CartoDB dark tiles, route polylines, and train markers</em>
 </p>
 
 ---

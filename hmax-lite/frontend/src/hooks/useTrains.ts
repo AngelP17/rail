@@ -1,7 +1,14 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { fetchTrains, fetchAllStations } from '../utils/api';
-import { getMockTrainListResponseFromPrevious, getMockTrainListResponse, getMockAllLinesResponse, generateMockHistory } from '../utils/mockData';
+import {
+  getMockTrainListResponseFromPrevious,
+  getMockTrainListResponse,
+  getMockAllLinesResponse,
+  generateMockHistory,
+  setMockScenario,
+} from '../utils/mockData';
+import { deriveEvents } from '../simulation/deriveEvents';
 import type {
   TelemetryHistoryPoint,
   TrainListResponse,
@@ -9,6 +16,8 @@ import type {
   MetroLine,
   Station,
   TrainStatus,
+  OperationalEvent,
+  ScenarioMode,
 } from '../types/train';
 
 const POLLING_INTERVAL = 1000;
@@ -19,14 +28,23 @@ export function useTrains() {
   const queryClient = useQueryClient();
   const [selectedTrainId, setSelectedTrainId] = useState<string | null>(null);
   const [selectedLine, setSelectedLine] = useState<MetroLine | 'all'>('all');
+  const [scenario, setScenario] = useState<ScenarioMode>('normal');
   const [telemetryHistory, setTelemetryHistory] = useState<Map<string, TelemetryHistoryPoint[]>>(new Map());
   const [mockTrains, setMockTrains] = useState<TrainStatus[]>([]);
+  const [events, setEvents] = useState<OperationalEvent[]>([]);
+  const [isDemoRunning, setIsDemoRunning] = useState(false);
   const historyRef = useRef(telemetryHistory);
   const mockInitialized = useRef(false);
+  const prevTrainsRef = useRef<TrainStatus[] | null>(null);
 
   useEffect(() => {
     historyRef.current = telemetryHistory;
   }, [telemetryHistory]);
+
+  // Sync scenario to mock data layer
+  useEffect(() => {
+    setMockScenario(scenario);
+  }, [scenario]);
 
   const {
     data: trainData,
@@ -58,12 +76,24 @@ export function useTrains() {
       if (!mockInitialized.current) {
         const initial = getMockTrainListResponse();
         setMockTrains(initial.trains);
+        prevTrainsRef.current = initial.trains;
         mockInitialized.current = true;
       }
       const interval = setInterval(() => {
         setMockTrains(prev => {
-          if (prev.length === 0) return getMockTrainListResponse().trains;
-          return getMockTrainListResponseFromPrevious(prev).trains;
+          if (prev.length === 0) {
+            const initial = getMockTrainListResponse();
+            prevTrainsRef.current = initial.trains;
+            return initial.trains;
+          }
+          const next = getMockTrainListResponseFromPrevious(prev).trains;
+          // Derive events
+          const newEvents = deriveEvents(prevTrainsRef.current, next);
+          if (newEvents.length > 0) {
+            setEvents(e => [...newEvents, ...e].slice(0, 100));
+          }
+          prevTrainsRef.current = next;
+          return next;
         });
       }, 1000);
       return () => clearInterval(interval);
@@ -74,6 +104,7 @@ export function useTrains() {
     () => ((trainError || USE_MOCK) ? mockTrains : (trainData?.trains || [])),
     [mockTrains, trainData?.trains, trainError],
   );
+
   const effectiveSystemStatus = useMemo(
     () =>
       (trainError || USE_MOCK)
@@ -138,9 +169,30 @@ export function useTrains() {
     setSelectedTrainId(null);
   }, []);
 
+  const setScenarioMode = useCallback((s: ScenarioMode) => {
+    setScenario(s);
+  }, []);
+
   const refreshTrains = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['trains'] });
   }, [queryClient]);
+
+  const startDemo = useCallback(() => {
+    setIsDemoRunning(true);
+    setSelectedLine('line3');
+    setScenario('tunnel_degraded');
+  }, []);
+
+  const stopDemo = useCallback(() => {
+    setIsDemoRunning(false);
+    setScenario('normal');
+  }, []);
+
+  const applyDemoStep = useCallback((step: { selectLine?: MetroLine; selectTrainId?: string; setScenario?: ScenarioMode }) => {
+    if (step.selectLine) setSelectedLine(step.selectLine);
+    if (step.selectTrainId) setSelectedTrainId(step.selectTrainId);
+    if (step.setScenario) setScenario(step.setScenario);
+  }, []);
 
   const filteredStations: Station[] = selectedLine === 'all'
     ? (linesData?.all_stations || [])
@@ -156,6 +208,8 @@ export function useTrains() {
     lines: linesData?.lines || [],
     selectedLine,
     selectLine,
+    scenario,
+    setScenarioMode,
     stations: filteredStations,
     allStations: linesData?.all_stations || [],
     routeCoordinates: filteredRouteCoordinates,
@@ -164,6 +218,11 @@ export function useTrains() {
     selectedTrainId,
     selectTrain,
     selectedTrainHistory,
+    events,
+    isDemoRunning,
+    startDemo,
+    stopDemo,
+    applyDemoStep,
     isLoading: isLoadingTrains || isLoadingLines,
     isLoadingTrains,
     isLoadingLines,

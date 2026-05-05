@@ -4,3 +4,7 @@ export { TrainList } from './TrainList';
 export { TelemetrySidebar } from './TelemetrySidebar';
 export { SpeedGauge } from './SpeedGauge';
 export { EnergyChart, TempGauge } from './EnergyChart';
+export { EventTimeline } from './EventTimeline';
+export { ScenarioDirector } from './ScenarioDirector';
+export { RailSimulationBoard } from './simulation/RailSimulationBoard';
+export { ErrorBoundary } from './ErrorBoundary';

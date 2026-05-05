@@ -1,6 +1,6 @@
 # HMAX-Lite: Panama Metro Digital Twin
 
-![HMAX-Lite OCC Dashboard](dashboard-occ.png)
+![HMAX-Lite OCC Dashboard](docs/screenshots/dashboard-full.png)
 
 ## 🚝 Project Overview
 
@@ -46,13 +46,21 @@ flowchart LR
 
 ### Dashboard Screenshots
 
-*Train telemetry sidebar with speed gauge, B-CHOP energy recovery, tunnel relay state, and brake temperature*
+*Custom SVG Rail Simulation Board with animated train capsules, signal blocks, tunnel relay zone, and B-CHOP energy pulses*
 
-![Train Telemetry View](dashboard-telemetry.png)
+![Dispatch Playfield](docs/screenshots/dashboard-full.png)
+
+*Train Hero Inspector with route strip, speed phase, block occupancy, and recent events*
+
+![Train Telemetry View](docs/screenshots/dashboard-telemetry.png)
 
 *Line 3 tunnel-focused view with TUNNEL_RELAY communications mode and fleet state*
 
-![Line 3 Tunnel View](dashboard-line3.png)
+![Line 3 Tunnel View](docs/screenshots/dashboard-line3.png)
+
+*Leaflet geographic map view with CartoDB dark tiles, route polylines, and interactive train markers*
+
+![Map View](docs/screenshots/dashboard-map.png)
 
 ---
 
@@ -91,6 +99,25 @@ flowchart LR
 - **ETA Calculations:** Real-time "Next Station ETA" for each train
 - **Headway Management:** Virtual spacing management between active trains
 - **Speed Curves:** Realistic acceleration/deceleration profiles
+
+### 5. 🎬 Flagship Demo Mode
+
+One-click "Run Flagship Scenario" auto-sequences a 45-60 second portfolio demonstration:
+- Auto-selects Line 3 and follows a tunnel train
+- Highlights signal blocks and tunnel relay zone
+- Triggers B-CHOP braking with energy pulse visuals
+- Writes operational events to the live timeline
+- Finishes with a concise system summary
+
+### 6. 🧭 Scenario Director
+
+Six simulation modes that visibly change the playfield:
+- **Normal Service** — baseline operations
+- **Rush Hour Compression** — compressed headways
+- **Tunnel Relay Degraded** — intensified tunnel highlighting
+- **B-CHOP Peak Recovery** — maximized regenerative braking
+- **Station Dwell Delay** — extended stops
+- **Signal Block Hold** — controlled occupancy
 
 ---
 
@@ -218,25 +245,34 @@ hmax-lite/
 │   ├── vite.config.ts
 │   ├── tailwind.config.js
 │   └── src/
-│       ├── App.tsx               # Main dashboard layout
+│       ├── App.tsx                  # 2.5D dispatch playfield layout
 │       ├── components/
-│       │   ├── Header.tsx         # Legacy header component
-│       │   ├── Map.tsx            # Multi-line Leaflet map
-│       │   ├── TrainMarker.tsx    # Line-colored train SVG icons
-│       │   ├── TrainList.tsx      # Fleet list grouped by line
-│       │   ├── TelemetrySidebar.tsx # Full telemetry panel
-│       │   ├── SpeedGauge.tsx     # SVG circular gauge
-│       │   ├── EnergyChart.tsx    # Recharts area chart + temp gauge
-│       │   ├── MetricsCard.tsx    # Reusable metric with sparkline
-│       │   └── PageTransition.tsx # Animation wrappers
+│       │   ├── simulation/
+│       │   │   └── RailSimulationBoard.tsx  # SVG hero surface
+│       │   ├── EventTimeline.tsx      # Live ops event strip
+│       │   ├── ScenarioDirector.tsx   # Demo + scenario selector
+│       │   ├── Map.tsx                # Leaflet geographic layer
+│       │   ├── TrainMarker.tsx        # Line-colored train SVG icons
+│       │   ├── TrainList.tsx          # Fleet list grouped by line
+│       │   ├── TelemetrySidebar.tsx   # Hero Inspector panel
+│       │   ├── SpeedGauge.tsx         # SVG circular gauge
+│       │   ├── EnergyChart.tsx        # Recharts area chart
+│       │   ├── MetricsCard.tsx        # Reusable metric card
+│       │   └── PageTransition.tsx     # Animation wrappers
+│       ├── simulation/
+│       │   ├── scenarios.ts           # Scenario configurations
+│       │   ├── deriveEvents.ts        # Event detection from train deltas
+│       │   ├── deriveSignalBlocks.ts  # Block occupancy derivation
+│       │   ├── deriveOperatorPrompts.ts # Contextual prompt generation
+│       │   └── deriveSimulationFrame.ts # Frame assembly
 │       ├── hooks/
-│       │   └── useTrains.ts       # Data fetching + mock fallback
+│       │   └── useTrains.ts           # Data fetching + mock fallback
 │       ├── types/
-│       │   └── train.ts           # MetroLine types & config
+│       │   └── train.ts               # MetroLine types & config
 │       └── utils/
-│           ├── api.ts             # API client with mock fallback
-│           ├── cn.ts              # Tailwind class merge helper
-│           └── mockData.ts        # Realistic mock telemetry data
+│           ├── api.ts                 # API client with mock fallback
+│           ├── cn.ts                  # Tailwind class merge helper
+│           └── mockData.ts            # Realistic mock telemetry data
 └── docs/
     ├── architecture.md
     ├── dashboard-full.png

@@ -16,3 +16,8 @@ orjson
 
 # Utilities
 python-dateutil
+
+# Testing
+pytest
+httpx
+pytest-asyncio

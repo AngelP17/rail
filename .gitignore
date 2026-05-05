@@ -30,3 +30,4 @@ wheels/
 .kimi/
 .claude/
 !.claude/skills
+.snapshots/
