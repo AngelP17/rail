@@ -264,9 +264,11 @@ hmax-lite/
 │           └── mockData.ts        # Realistic mock telemetry data
 └── docs/
     ├── architecture.md
-    ├── dashboard-full.png
-    ├── dashboard-telemetry.png
-    └── dashboard-line3.png
+    └── screenshots/
+        ├── dashboard-full.png
+        ├── dashboard-telemetry.png
+        ├── dashboard-line3.png
+        └── dashboard-map.png
 ```
 
 ---

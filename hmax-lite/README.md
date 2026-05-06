@@ -275,9 +275,11 @@ hmax-lite/
 │           └── mockData.ts            # Realistic mock telemetry data
 └── docs/
     ├── architecture.md
-    ├── dashboard-full.png
-    ├── dashboard-telemetry.png
-    └── dashboard-line3.png
+    └── screenshots/
+        ├── dashboard-full.png
+        ├── dashboard-telemetry.png
+        ├── dashboard-line3.png
+        └── dashboard-map.png
 ```
 
 ---
@@ -311,11 +313,12 @@ npm run lint
 
 cd ../backend
 python3 -m compileall .
+pytest -v
 curl http://localhost:8000/health
 curl http://localhost:8000/api/trains
 ```
 
-There is no dedicated automated backend test suite in this repository yet. Use the compile and API checks above, plus manual dashboard verification, until one is added.
+Backend smoke tests live in `backend/tests/` and cover the health, lines, stations, and train telemetry endpoints. Use the API curls above as manual checks when the backend server is running.
 
 ---
 

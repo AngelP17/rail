@@ -7,7 +7,8 @@
  * and B-CHOP energy pulses. Replaces generic map as the main wow surface.
  */
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import type { TrainStatus, Station, MetroLine } from '../../types/train';
 import { LINE_CONFIG } from '../../types/train';
 import type { SignalBlock } from '../../simulation/deriveSignalBlocks';
@@ -26,6 +27,11 @@ interface RailSimulationBoardProps {
 // SVG viewport dimensions
 const VW = 1000;
 const VH = 700;
+const MAP_CENTER: [number, number] = [8.98, -79.52];
+const MAP_ZOOM = 11;
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const TILE_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 // Map geo bounds to SVG coords
 function geoToSvg(lat: number, lng: number): [number, number] {
@@ -340,6 +346,23 @@ function EnergyNetworkMeter({ level }: { level: number }) {
   );
 }
 
+function GeoUnderlay({ routeCoords }: { routeCoords: Record<MetroLine, [number, number][]> }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const coords = Object.values(routeCoords).flat();
+    if (coords.length > 0) {
+      map.fitBounds(coords, {
+        padding: [42, 42],
+        maxZoom: 12,
+        animate: false,
+      });
+    }
+  }, [map, routeCoords]);
+
+  return null;
+}
+
 export function RailSimulationBoard({
   trains,
   stations,
@@ -373,8 +396,34 @@ export function RailSimulationBoard({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#06090f]" style={{ borderRadius: 'inherit' }}>
+      {/* Geographic context under the simulation layer. The SVG remains the operating surface. */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.34]"
+        style={{
+          filter: 'saturate(0.45) contrast(1.2) brightness(0.78)',
+        }}
+        aria-hidden="true"
+      >
+        <MapContainer
+          center={MAP_CENTER}
+          zoom={MAP_ZOOM}
+          className="h-full w-full"
+          zoomControl={false}
+          attributionControl={false}
+          dragging={false}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          boxZoom={false}
+          keyboard={false}
+          touchZoom={false}
+        >
+          <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+          <GeoUnderlay routeCoords={routeCoords} />
+        </MapContainer>
+      </div>
+      <div className="absolute inset-0 bg-[#06090f]/55" aria-hidden="true" />
       {/* Grid background */}
-      <div className="absolute inset-0 opacity-[0.04]" style={{
+      <div className="absolute inset-0 opacity-[0.08]" style={{
         backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
         backgroundSize: '40px 40px',
       }} />
