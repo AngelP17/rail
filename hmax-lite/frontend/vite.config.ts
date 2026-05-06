@@ -22,7 +22,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
           'vendor-map': ['leaflet', 'react-leaflet'],
           'vendor-charts': ['recharts'],
           'vendor-query': ['@tanstack/react-query'],
