@@ -11,6 +11,8 @@ export interface SignalBlock {
   status: 'clear' | 'occupied' | 'approach' | 'restricted';
 }
 
+const SEGMENT_KEY_SEPARATOR = '::';
+
 export function deriveSignalBlocks(trains: TrainStatus[]): SignalBlock[] {
   const blocks: SignalBlock[] = [];
   const trainsByLine = new Map<MetroLine, TrainStatus[]>();
@@ -24,13 +26,13 @@ export function deriveSignalBlocks(trains: TrainStatus[]): SignalBlock[] {
     // Group trains by their current segment
     const segmentMap = new Map<string, TrainStatus[]>();
     for (const t of lineTrains) {
-      const segKey = `${t.position.current_station_id}-${t.position.next_station_id}`;
+      const segKey = `${t.position.current_station_id}${SEGMENT_KEY_SEPARATOR}${t.position.next_station_id}`;
       if (!segmentMap.has(segKey)) segmentMap.set(segKey, []);
       segmentMap.get(segKey)!.push(t);
     }
 
     for (const [segKey, segTrains] of segmentMap) {
-      const [fromId, toId] = segKey.split('-');
+      const [fromId, toId] = segKey.split(SEGMENT_KEY_SEPARATOR);
       const occupancy = Math.min(1, segTrains.reduce((sum, t) => sum + t.block_occupancy, 0));
       const isTunnel = line === 'line3' && ((fromId === 'ST-02' && toId === 'ST-03') || (fromId === 'ST-03' && toId === 'ST-02'));
 

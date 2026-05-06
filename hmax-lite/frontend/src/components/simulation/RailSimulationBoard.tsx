@@ -8,10 +8,15 @@
  */
 
 import { useEffect, useMemo, useRef } from 'react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import type { TrainStatus, Station, MetroLine } from '../../types/train';
 import { LINE_CONFIG } from '../../types/train';
 import type { SignalBlock } from '../../simulation/deriveSignalBlocks';
+import { deriveSignalBlocks } from '../../simulation/deriveSignalBlocks';
+
+gsap.registerPlugin(useGSAP);
 
 interface RailSimulationBoardProps {
   trains: TrainStatus[];
@@ -103,15 +108,27 @@ function StationNode({ station, isTerminal, isTunnel, isSelected }: {
   );
 }
 
-function TrainCapsule({ train, isSelected, onClick }: {
+function getBlockColor(status: SignalBlock['status']): string {
+  if (status === 'occupied') return '#ef4444';
+  if (status === 'approach') return '#fbbf24';
+  if (status === 'restricted') return '#22d3ee';
+  return '#34d399';
+}
+
+function TrainCapsule({ train, isSelected, onClick, stationMap }: {
   train: TrainStatus;
   isSelected: boolean;
   onClick: () => void;
+  stationMap: Map<string, Station>;
 }) {
   const [x, y] = geoToSvg(train.position.lat, train.position.lng);
   const color = train.is_in_tunnel ? '#22d3ee' : train.telemetry.b_chop_status ? '#fbbf24' : LINE_CONFIG[train.line].color;
   const capsuleWidth = isSelected ? 32 : 24;
   const capsuleHeight = isSelected ? 14 : 10;
+  const currentStation = stationMap.get(train.position.current_station_id);
+  const nextStation = stationMap.get(train.position.next_station_id);
+  const canDrawTrail = currentStation && nextStation && !train.at_station;
+  const [segmentStartX, segmentStartY] = currentStation ? geoToSvg(currentStation.lat, currentStation.lng) : [x, y];
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -131,9 +148,37 @@ function TrainCapsule({ train, isSelected, onClick }: {
       onClick={onClick}
       onKeyDown={handleKeyDown}
     >
-      {/* Selection ring */}
+      {canDrawTrail && (
+        <g className={isSelected ? 'selected-train-shell' : undefined}>
+          <line
+            x1={segmentStartX}
+            y1={segmentStartY}
+            x2={x}
+            y2={y}
+            stroke={color}
+            strokeWidth={isSelected ? 8 : 5}
+            strokeLinecap="round"
+            opacity={isSelected ? 0.22 : 0.11}
+          />
+          <line
+            x1={segmentStartX}
+            y1={segmentStartY}
+            x2={x}
+            y2={y}
+            stroke={color}
+            strokeWidth={isSelected ? 2.5 : 1.5}
+            strokeLinecap="round"
+            opacity={isSelected ? 0.82 : 0.42}
+            strokeDasharray="3 7"
+          >
+            <animate attributeName="stroke-dashoffset" values="18;0" dur="1s" repeatCount="indefinite" />
+          </line>
+        </g>
+      )}
+
       {isSelected && (
         <rect
+          className="selected-train-shell"
           x={x - capsuleWidth / 2 - 4}
           y={y - capsuleHeight / 2 - 4}
           width={capsuleWidth + 8}
@@ -147,7 +192,6 @@ function TrainCapsule({ train, isSelected, onClick }: {
           <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1s" repeatCount="indefinite" />
         </rect>
       )}
-      {/* Train body */}
       <rect
         x={x - capsuleWidth / 2}
         y={y - capsuleHeight / 2}
@@ -159,14 +203,12 @@ function TrainCapsule({ train, isSelected, onClick }: {
         strokeWidth="2"
         style={{ filter: `drop-shadow(0 0 ${isSelected ? 8 : 4}px ${color}60)` }}
       />
-      {/* Direction indicator */}
       <circle
         cx={x + (train.direction === 'EASTBOUND' || train.direction === 'SOUTHBOUND' ? capsuleWidth / 2 - 4 : -capsuleWidth / 2 + 4)}
         cy={y}
         r={2}
         fill={color}
       />
-      {/* Speed bar inside capsule */}
       <rect
         x={x - capsuleWidth / 2 + 3}
         y={y + 2}
@@ -176,14 +218,12 @@ function TrainCapsule({ train, isSelected, onClick }: {
         fill={color}
         opacity="0.7"
       />
-      {/* B-CHOP energy pulse */}
       {train.telemetry.b_chop_status && (
         <circle cx={x} cy={y} r={capsuleWidth} fill="none" stroke="#d7ff5f" strokeWidth="1" opacity="0.5">
           <animate attributeName="r" values={`${capsuleWidth};${capsuleWidth + 20};${capsuleWidth}`} dur="0.8s" repeatCount="indefinite" />
           <animate attributeName="opacity" values="0.5;0;0.5" dur="0.8s" repeatCount="indefinite" />
         </circle>
       )}
-      {/* Tunnel dimming */}
       {train.is_in_tunnel && (
         <rect
           x={x - capsuleWidth / 2}
@@ -195,7 +235,6 @@ function TrainCapsule({ train, isSelected, onClick }: {
           style={{ mixBlendMode: 'screen' }}
         />
       )}
-      {/* Train ID label on hover/select */}
       {isSelected && (
         <text
           x={x}
@@ -304,27 +343,90 @@ function RailCorridor({ line, coordinates, isFiltered }: {
   );
 }
 
-function SignalBlockOverlay({ blocks, selectedLine }: { blocks: SignalBlock[]; selectedLine: MetroLine | 'all' }) {
+function SignalBlockOverlay({
+  blocks,
+  selectedLine,
+  stationMap,
+}: {
+  blocks: SignalBlock[];
+  selectedLine: MetroLine | 'all';
+  stationMap: Map<string, Station>;
+}) {
   return (
-    <g>
+    <g className="signal-block-layer">
       {blocks
         .filter(b => selectedLine === 'all' || b.line === selectedLine)
         .map(block => {
-          // Find station coordinates
-          // This is simplified - in full implementation we'd look up station coords
-          // For now, render as opacity overlay on line paths
-          const statusColor =
-            block.status === 'occupied' ? '#ef4444' :
-            block.status === 'approach' ? '#fbbf24' :
-            block.status === 'restricted' ? '#22d3ee' :
-            '#34d399';
+          const from = stationMap.get(block.fromStationId);
+          const to = stationMap.get(block.toStationId);
+          if (!from || !to) return null;
+
+          const [x1, y1] = geoToSvg(from.lat, from.lng);
+          const [x2, y2] = geoToSvg(to.lat, to.lng);
+          const mx = x1 + (x2 - x1) * 0.5;
+          const my = y1 + (y2 - y1) * 0.5;
+          const statusColor = getBlockColor(block.status);
+          const activeOpacity = block.status === 'clear' ? 0.08 : 0.42 + block.occupancy * 0.35;
+          const railWidth = block.isTunnel ? 18 : 13;
+          const showStatusLabel =
+            block.status !== 'clear' &&
+            (selectedLine !== 'all' || block.status === 'restricted' || block.isTunnel);
 
           return (
-            <g key={block.id} opacity={block.occupancy > 0 ? 0.6 : 0}>
-              {/* Simplified block indicator - a small dot along the line */}
-              <circle cx={0} cy={0} r={0} fill={statusColor}>
-                <animate attributeName="opacity" values="0.3;0.7;0.3" dur="1.5s" repeatCount="indefinite" />
-              </circle>
+            <g key={block.id} opacity={selectedLine === 'all' ? 0.9 : 1}>
+              <line
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke={statusColor}
+                strokeWidth={railWidth}
+                strokeLinecap="round"
+                opacity={activeOpacity}
+                strokeDasharray={block.isTunnel ? '10 8' : undefined}
+              />
+              {block.status !== 'clear' && (
+                <>
+                  <line
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke={statusColor}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    opacity="0.9"
+                  >
+                    <animate attributeName="stroke-dashoffset" values="20;0" dur="1.2s" repeatCount="indefinite" />
+                  </line>
+                  {showStatusLabel && (
+                    <g transform={`translate(${mx}, ${my - 16})`}>
+                      <rect
+                        x="-22"
+                        y="-8"
+                        width="44"
+                        height="16"
+                        rx="4"
+                        fill="rgba(6,9,15,0.86)"
+                        stroke={statusColor}
+                        strokeWidth="1"
+                        opacity="0.94"
+                      />
+                      <text
+                        x="0"
+                        y="3"
+                        textAnchor="middle"
+                        fill={statusColor}
+                        fontSize="7"
+                        fontFamily="JetBrains Mono, monospace"
+                        fontWeight="700"
+                      >
+                        {block.status.toUpperCase()}
+                      </text>
+                    </g>
+                  )}
+                </>
+              )}
             </g>
           );
         })}
@@ -374,6 +476,7 @@ export function RailSimulationBoard({
   showEnergyPulses,
 }: RailSimulationBoardProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const stationsByLine = useMemo(() => {
     const grouped: Record<MetroLine, Station[]> = { line1: [], line2: [], line3: [] };
@@ -387,15 +490,44 @@ export function RailSimulationBoard({
     return coords;
   }, [stations]);
 
+  const stationMap = useMemo(() => {
+    const map = new Map<string, Station>();
+    stations.forEach(station => map.set(station.id, station));
+    return map;
+  }, [stations]);
+
   const filteredTrains = useMemo(() =>
     selectedLine === 'all' ? trains : trains.filter(t => t.line === selectedLine),
     [trains, selectedLine]
   );
 
+  const boardSignalBlocks = useMemo(
+    () => signalBlocks.length > 0 ? signalBlocks : deriveSignalBlocks(trains),
+    [signalBlocks, trains],
+  );
+
   const linesToShow: MetroLine[] = selectedLine === 'all' ? ['line1', 'line2', 'line3'] : [selectedLine];
 
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    gsap.fromTo(
+      '.dispatch-scan',
+      { xPercent: -120 },
+      { xPercent: 120, duration: 4.8, repeat: -1, ease: 'none' },
+    );
+
+    gsap.to('.selected-train-shell', {
+      opacity: 0.72,
+      duration: 0.9,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+    });
+  }, { scope: rootRef, dependencies: [selectedTrainId, selectedLine] });
+
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#06090f]" style={{ borderRadius: 'inherit' }}>
+    <div ref={rootRef} className="relative h-full w-full overflow-hidden bg-[#06090f]" style={{ borderRadius: 'inherit' }}>
       {/* Geographic context under the simulation layer. The SVG remains the operating surface. */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.34]"
@@ -427,6 +559,14 @@ export function RailSimulationBoard({
         backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
         backgroundSize: '40px 40px',
       }} />
+      <div
+        className="dispatch-scan pointer-events-none absolute inset-y-0 left-0 w-1/3 opacity-30"
+        style={{
+          background: 'linear-gradient(90deg, transparent 0%, rgba(34,211,238,0.08) 48%, rgba(215,255,95,0.13) 50%, rgba(34,211,238,0.08) 52%, transparent 100%)',
+          filter: 'blur(10px)',
+        }}
+        aria-hidden="true"
+      />
 
       <svg
         ref={svgRef}
@@ -462,7 +602,7 @@ export function RailSimulationBoard({
         ))}
 
         {/* Signal blocks overlay */}
-        <SignalBlockOverlay blocks={signalBlocks} selectedLine={selectedLine} />
+        <SignalBlockOverlay blocks={boardSignalBlocks} selectedLine={selectedLine} stationMap={stationMap} />
 
         {/* Stations */}
         {linesToShow.map(line =>
@@ -484,6 +624,7 @@ export function RailSimulationBoard({
             train={train}
             isSelected={train.id === selectedTrainId}
             onClick={() => onSelectTrain(train.id)}
+            stationMap={stationMap}
           />
         ))}
 
@@ -543,7 +684,7 @@ export function RailSimulationBoard({
         </div>
         <div className="rounded-md border border-white/[0.06] bg-[#0a0e14]/80 px-3 py-1.5 backdrop-blur-md">
           <span className="font-mono text-[9px] text-white/40">BLOCKS</span>
-          <span className="ml-2 font-mono text-xs font-bold text-white">{signalBlocks.filter(b => selectedLine === 'all' || b.line === selectedLine).length}</span>
+          <span className="ml-2 font-mono text-xs font-bold text-white">{boardSignalBlocks.filter(b => selectedLine === 'all' || b.line === selectedLine).length}</span>
         </div>
       </div>
     </div>
