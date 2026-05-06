@@ -1,20 +1,35 @@
 /**
- * EventTimeline - Live Operations Event Strip
- * ============================================
+ * EventTimeline — Live Operations Event Strip
+ * =============================================
  *
- * Replaces generic bottom KPI cards with a live operational event log.
- * Shows real train events with severity, timestamps, and train associations.
+ * Severity lanes, event grouping, selected-train highlighting,
+ * compact network state when empty.
  */
 
-import { useRef, useEffect } from 'react';
-import { ArrowRight, Zap, Radio, AlertTriangle, Check, MapPin, Minimize2, Maximize2, BatteryCharging, Wifi, Clock, TrainFront } from 'lucide-react';
+import { useRef, useEffect, useMemo } from 'react';
+import {
+  ArrowRight,
+  Zap,
+  Radio,
+  AlertTriangle,
+  Check,
+  MapPin,
+  Minimize2,
+  Maximize2,
+  BatteryCharging,
+  Wifi,
+  Clock,
+  TrainFront,
+  Activity,
+} from 'lucide-react';
 import type { OperationalEvent, EventType } from '../types/train';
 import { getEventColor } from '../simulation/deriveEvents';
 
 interface EventTimelineProps {
   events: OperationalEvent[];
   maxEvents?: number;
-  onEventClick?: (event: OperationalEvent) => void;
+  selectedTrainId?: string | null;
+  onSelectTrain?: (trainId: string) => void;
 }
 
 const EVENT_ICONS: Record<EventType, React.ReactNode> = {
@@ -36,17 +51,30 @@ function formatEventTime(timestamp: number): string {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
 }
 
-function EventItem({ event, isLatest }: { event: OperationalEvent; isLatest: boolean }) {
+function EventItem({
+  event,
+  isLatest,
+  isSelectedTrain,
+  onClick,
+}: {
+  event: OperationalEvent;
+  isLatest: boolean;
+  isSelectedTrain: boolean;
+  onClick?: () => void;
+}) {
   const color = getEventColor(event.type);
   const icon = EVENT_ICONS[event.type] || <TrainFront className="h-3 w-3" />;
 
   return (
     <div
+      onClick={onClick}
       className={`group flex items-center gap-2.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 transition-all duration-300 ${
-        isLatest
+        isSelectedTrain
+          ? 'border-brand/30 bg-brand/[0.08]'
+          : isLatest
           ? 'border-white/[0.12] bg-white/[0.06]'
           : 'border-white/[0.04] bg-transparent hover:border-white/[0.08] hover:bg-white/[0.03]'
-      }`}
+      } ${onClick ? 'cursor-pointer' : ''}`}
       style={{ animation: isLatest ? 'slide-in-right 0.3s ease-out' : 'none' }}
     >
       {/* Severity dot */}
@@ -64,20 +92,18 @@ function EventItem({ event, isLatest }: { event: OperationalEvent; isLatest: boo
       </span>
 
       {/* Time */}
-      <span className="font-mono text-[9px] text-white/30 flex-shrink-0">
-        {formatEventTime(event.timestamp)}
-      </span>
+      <span className="font-mono text-3xs text-white/30 flex-shrink-0">{formatEventTime(event.timestamp)}</span>
 
       {/* Message */}
-      <span className="text-[11px] text-white/60 truncate max-w-[200px] group-hover:text-white/80 transition-colors">
+      <span className="text-2xs text-white/60 truncate max-w-[200px] group-hover:text-white/80 transition-colors">
         {event.message}
       </span>
 
       {/* Train tag */}
       <span
-        className="rounded px-1 py-0.5 font-mono text-[8px] flex-shrink-0"
+        className="rounded px-1 py-0.5 font-mono text-3xs flex-shrink-0"
         style={{
-          backgroundColor: `${color}15`,
+          backgroundColor: isSelectedTrain ? `${color}30` : `${color}15`,
           color: `${color}cc`,
         }}
       >
@@ -87,7 +113,7 @@ function EventItem({ event, isLatest }: { event: OperationalEvent; isLatest: boo
   );
 }
 
-export function EventTimeline({ events, maxEvents = 20, onEventClick }: EventTimelineProps) {
+export function EventTimeline({ events, maxEvents = 24, selectedTrainId, onSelectTrain }: EventTimelineProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,13 +124,47 @@ export function EventTimeline({ events, maxEvents = 20, onEventClick }: EventTim
 
   const displayEvents = events.slice(0, maxEvents);
 
+  // Group by severity for lane visualization
+  const severityCounts = useMemo(() => {
+    const counts = { info: 0, warning: 0, critical: 0 };
+    displayEvents.forEach((e) => {
+      counts[e.severity] = (counts[e.severity] || 0) + 1;
+    });
+    return counts;
+  }, [displayEvents]);
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-white/[0.06]">
-        <Clock className="h-3 w-3 text-white/30" strokeWidth={1.5} />
-        <span className="font-mono text-[9px] uppercase tracking-wider text-white/30">Live Events</span>
-        <span className="ml-auto font-mono text-[9px] text-white/20">{events.length} total</span>
+      <div className="flex items-center gap-3 px-3 py-2 border-b border-scada-border">
+        <div className="flex items-center gap-2">
+          <Clock className="h-3 w-3 text-white/30" strokeWidth={1.5} />
+          <span className="font-mono text-3xs uppercase tracking-wider text-white/30">Live Events</span>
+        </div>
+
+        {/* Severity lanes */}
+        <div className="hidden items-center gap-2 md:flex">
+          {severityCounts.critical > 0 && (
+            <span className="flex items-center gap-1 rounded bg-status-danger/10 px-1.5 py-0.5 text-3xs font-mono text-status-danger">
+              <span className="h-1 w-1 rounded-full bg-status-danger" />
+              {severityCounts.critical}
+            </span>
+          )}
+          {severityCounts.warning > 0 && (
+            <span className="flex items-center gap-1 rounded bg-status-warning/10 px-1.5 py-0.5 text-3xs font-mono text-status-warning">
+              <span className="h-1 w-1 rounded-full bg-status-warning" />
+              {severityCounts.warning}
+            </span>
+          )}
+          {severityCounts.info > 0 && (
+            <span className="flex items-center gap-1 rounded bg-status-normal/10 px-1.5 py-0.5 text-3xs font-mono text-status-normal">
+              <span className="h-1 w-1 rounded-full bg-status-normal" />
+              {severityCounts.info}
+            </span>
+          )}
+        </div>
+
+        <span className="ml-auto font-mono text-3xs text-white/20">{events.length} total</span>
       </div>
 
       {/* Event strip */}
@@ -114,15 +174,26 @@ export function EventTimeline({ events, maxEvents = 20, onEventClick }: EventTim
         style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(51,65,85,0.5) transparent' }}
       >
         {displayEvents.length === 0 ? (
-          <div className="flex items-center gap-2 text-white/20 px-2">
-            <TrainFront className="h-3 w-3" strokeWidth={1.5} />
-            <span className="text-[10px] font-mono">Awaiting operational events...</span>
+          <div className="flex w-full items-center justify-between px-2">
+            <div className="flex items-center gap-2 text-white/20">
+              <Activity className="h-3 w-3" strokeWidth={1.5} />
+              <span className="text-2xs font-mono">Network nominal. Awaiting operational events...</span>
+            </div>
+            <div className="flex items-center gap-3 text-3xs font-mono text-white/20">
+              <span className="flex items-center gap-1"><span className="h-1 w-1 rounded-full bg-status-normal" /> Normal</span>
+              <span className="flex items-center gap-1"><span className="h-1 w-1 rounded-full bg-status-warning" /> Warning</span>
+              <span className="flex items-center gap-1"><span className="h-1 w-1 rounded-full bg-status-danger" /> Critical</span>
+            </div>
           </div>
         ) : (
           displayEvents.map((event, index) => (
-            <div key={event.id} onClick={() => onEventClick?.(event)} style={{ cursor: onEventClick ? 'pointer' : 'default' }}>
-              <EventItem event={event} isLatest={index === 0} />
-            </div>
+            <EventItem
+              key={event.id}
+              event={event}
+              isLatest={index === 0}
+              isSelectedTrain={!!selectedTrainId && event.train_id === selectedTrainId}
+              onClick={onSelectTrain ? () => onSelectTrain(event.train_id) : undefined}
+            />
           ))
         )}
       </div>

@@ -15,23 +15,23 @@
    ============================================================================ */
 
 :root {
-  /* SCADA Color Palette - Enhanced */
-  --scada-bg: #0a0e14;
-  --scada-bg-gradient: linear-gradient(180deg, #0a0e14 0%, #0d1320 100%);
-  --scada-surface: #0f172a;
-  --scada-surface-elevated: #141d2e;
-  --scada-card: #1e293b;
-  --scada-card-hover: #253449;
-  --scada-border: #334155;
-  --scada-border-subtle: rgba(51, 65, 85, 0.5);
-  --scada-text: #e2e8f0;
+  /* SCADA Color Palette - Aligned with Tailwind tokens */
+  --scada-bg: #06090f;
+  --scada-bg-gradient: linear-gradient(180deg, #06090f 0%, #0a0e14 100%);
+  --scada-surface: #0a0e14;
+  --scada-surface-elevated: #0f172a;
+  --scada-card: #111827;
+  --scada-card-hover: #1a2236;
+  --scada-border: rgba(255,255,255,0.06);
+  --scada-border-subtle: rgba(255,255,255,0.06);
+  --scada-text: #f1f5f9;
   --scada-text-secondary: #94a3b8;
   --scada-muted: #64748b;
 
-  /* Status Colors — refined, saturation < 80%, no purple */
+  /* Status Colors — saturation < 80%, no purple */
   --status-normal: #34d399;
   --status-warning: #fbbf24;
-  --status-danger: #f87171;
+  --status-danger: #ef4444;
   --status-tunnel: #22d3ee;
   --status-info: #60a5fa;
 
@@ -808,10 +808,10 @@ body {
 }
 
 .recharts-default-tooltip {
-  background-color: var(--scada-card) !important;
-  border: 1px solid var(--scada-border) !important;
+  background-color: #111827 !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
   border-radius: 8px !important;
-  box-shadow: var(--shadow-lg) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* ============================================================================

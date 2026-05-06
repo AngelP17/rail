@@ -1,76 +1,79 @@
 /**
- * TelemetrySidebar - Selected Train Hero Inspector
- * =================================================
+ * TelemetrySidebar — Train Dossier Inspector
+ * ===========================================
  *
- * Premium inspector panel for selected trains.
- * Shows route strip, speed phase, block occupancy, ETA,
- * motor current, brake temp, comms mode, energy, and events.
+ * True operational inspector: identity, route strip, speed phase,
+ * telemetry instruments, block risk, event memory.
  */
 
-import type { ReactNode } from 'react';
-import { X, Zap, Radio, Thermometer, Clock, Route, Gauge, Activity, BatteryCharging, Wifi, AlertTriangle } from 'lucide-react';
-import type { TrainStatus, TelemetryHistoryPoint, Station } from '../types/train';
+import {
+  X,
+  Zap,
+  Radio,
+  Thermometer,
+  Clock,
+  Route,
+  Gauge,
+  Activity,
+  BatteryCharging,
+  Wifi,
+  AlertTriangle,
+} from 'lucide-react';
+import type { TrainStatus, TelemetryHistoryPoint, Station, OperationalEvent } from '../types/train';
 import { LINE_CONFIG } from '../types/train';
 import { SpeedGauge } from './SpeedGauge';
 import { EnergyChart } from './EnergyChart';
+import { OperationalMetric } from './primitives';
 import { formatEta } from '../utils/api';
+import { getTrainStatusColor, getTrainStatusText } from '../utils/sharedStyling';
 
 interface TelemetrySidebarProps {
   train: TrainStatus | null;
   history: TelemetryHistoryPoint[];
   stations: Station[];
   onClose: () => void;
+  allTrains: TrainStatus[];
+  events: OperationalEvent[];
+  onSelectTrain?: (id: string) => void;
 }
 
-function EmptyState() {
+function EmptyState({ allTrains, onSelect }: { allTrains: TrainStatus[]; onSelect?: (id: string) => void }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
-        <Radio className="h-6 w-6 text-white/30" strokeWidth={1.5} />
-      </div>
-      <div>
-        <p className="text-sm font-semibold text-white/60">Awaiting selection</p>
-        <p className="mt-1 text-xs text-white/30">Select a train from the fleet list or click a capsule on the simulation board.</p>
-      </div>
-    </div>
-  );
-}
-
-function InspectorCard({
-  icon,
-  label,
-  value,
-  unit,
-  sublabel,
-  accent,
-  children,
-}: {
-  icon: ReactNode;
-  label: string;
-  value?: string;
-  unit?: string;
-  sublabel?: string;
-  accent: string;
-  children?: ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span style={{ color: accent }}>{icon}</span>
-          <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">{label}</span>
+    <div className="flex h-full flex-col">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
+          <Radio className="h-6 w-6 text-white/30" strokeWidth={1.5} />
         </div>
-        {sublabel && <span className="text-[10px] text-white/30">{sublabel}</span>}
-      </div>
-      {value !== undefined && (
-        <div className="flex items-baseline gap-1">
-          <span className="text-xl font-black tabular-nums" style={{ color: accent }}>
-            {value}
-          </span>
-          {unit && <span className="text-[10px] text-white/40">{unit}</span>}
+        <div>
+          <p className="text-sm font-semibold text-white/60">Awaiting selection</p>
+          <p className="mt-1 text-xs text-white/30">
+            Select a train from the playfield or choose a suggested unit below.
+          </p>
         </div>
-      )}
-      {children}
+        {allTrains.length > 0 && (
+          <div className="w-full space-y-1.5">
+            <p className="text-3xs font-mono uppercase tracking-wider text-white/20">Suggested</p>
+            {allTrains.slice(0, 4).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => onSelect?.(t.id)}
+                className="flex w-full items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-left transition-colors hover:bg-white/[0.06]"
+              >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: getTrainStatusColor(t) }} />
+                <span className="text-xs font-semibold text-white/70">{t.id}</span>
+                <span className="ml-auto text-3xs font-mono text-white/30">{Math.round(t.telemetry.speed_kmh)} km/h</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Compact network context */}
+      <div className="border-t border-scada-border p-4">
+        <div className="flex items-center justify-between text-3xs font-mono text-white/20">
+          <span>{allTrains.length} units active</span>
+          <span>{allTrains.filter((t) => t.is_in_tunnel).length} in tunnel</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -78,7 +81,7 @@ function InspectorCard({
 function PhaseBadge({ phase, color }: { phase: string; color: string }) {
   return (
     <span
-      className="rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider"
+      className="rounded-full border px-2 py-0.5 font-mono text-3xs font-bold uppercase tracking-wider"
       style={{
         backgroundColor: `${color}15`,
         borderColor: `${color}40`,
@@ -91,18 +94,17 @@ function PhaseBadge({ phase, color }: { phase: string; color: string }) {
 }
 
 function RouteStrip({ train, stations }: { train: TrainStatus; stations: Station[] }) {
-  const currentStation = stations.find(s => s.id === train.position.current_station_id);
-  const nextStation = stations.find(s => s.id === train.position.next_station_id);
+  const currentStation = stations.find((s) => s.id === train.position.current_station_id);
+  const nextStation = stations.find((s) => s.id === train.position.next_station_id);
   const lineColor = LINE_CONFIG[train.line].color;
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5">
+    <div className="rounded-xl border border-scada-border bg-white/[0.03] p-3.5">
       <div className="mb-3 flex items-center gap-2">
         <Route className="h-4 w-4 text-white/30" strokeWidth={1.5} />
-        <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">Route Segment</span>
+        <span className="text-2xs font-mono uppercase tracking-wider text-white/40">Route Segment</span>
       </div>
 
-      {/* Route strip visual */}
       <div className="relative mb-3">
         <div className="flex items-center gap-0">
           <div className="flex flex-col items-center gap-1 flex-shrink-0">
@@ -112,7 +114,7 @@ function RouteStrip({ train, stations }: { train: TrainStatus; stations: Station
           </div>
           <div className="flex-1 ml-3 space-y-3">
             <div>
-              <p className="text-[9px] text-white/30 uppercase tracking-wider">Current</p>
+              <p className="text-3xs text-white/30 uppercase tracking-wider">Current</p>
               <p className="text-xs font-semibold text-white/70">{currentStation?.name ?? train.position.current_station_id}</p>
             </div>
             <div className="h-1 overflow-hidden rounded-full bg-white/[0.06]">
@@ -122,23 +124,21 @@ function RouteStrip({ train, stations }: { train: TrainStatus; stations: Station
               />
             </div>
             <div>
-              <p className="text-[9px] text-white/30 uppercase tracking-wider">Next</p>
+              <p className="text-3xs text-white/30 uppercase tracking-wider">Next</p>
               <p className="text-xs font-semibold text-white">{nextStation?.name ?? train.position.next_station_id}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Segment name */}
       <div className="rounded-lg border border-white/[0.04] bg-white/[0.02] px-2.5 py-1.5">
-        <span className="font-mono text-[10px] text-white/50">{train.current_segment_name}</span>
+        <span className="font-mono text-2xs text-white/50">{train.current_segment_name}</span>
       </div>
 
-      {/* ETA */}
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3 w-3 text-white/30" strokeWidth={1.5} />
-          <span className="text-[10px] text-white/30">ETA</span>
+          <span className="text-2xs text-white/30">ETA</span>
         </div>
         <span className="font-mono text-lg font-black" style={{ color: lineColor }}>
           {formatEta(train.next_station_eta_seconds)}
@@ -148,25 +148,30 @@ function RouteStrip({ train, stations }: { train: TrainStatus; stations: Station
   );
 }
 
-function RecentEvents({ events }: { events: TrainStatus['recent_events'] }) {
-  if (events.length === 0) return null;
+function EventMemory({ events, trainId }: { events: OperationalEvent[]; trainId: string }) {
+  const trainEvents = events.filter((e) => e.train_id === trainId).slice(0, 6);
+  if (trainEvents.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5">
+    <div className="rounded-xl border border-scada-border bg-white/[0.03] p-3.5">
       <div className="mb-2 flex items-center gap-2">
         <Activity className="h-4 w-4 text-white/30" strokeWidth={1.5} />
-        <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">Recent Events</span>
+        <span className="text-2xs font-mono uppercase tracking-wider text-white/40">Event Memory</span>
       </div>
       <div className="space-y-1.5">
-        {events.slice(0, 4).map(event => (
+        {trainEvents.map((event) => (
           <div key={event.id} className="flex items-center gap-2 rounded-md bg-white/[0.02] px-2 py-1">
             <div
               className="h-1 w-1 flex-shrink-0 rounded-full"
               style={{
-                backgroundColor: event.severity === 'critical' ? '#ef4444' : event.severity === 'warning' ? '#fbbf24' : '#34d399',
+                backgroundColor:
+                  event.severity === 'critical' ? '#ef4444' : event.severity === 'warning' ? '#fbbf24' : '#34d399',
               }}
             />
-            <span className="truncate text-[10px] text-white/50">{event.message}</span>
+            <span className="truncate text-3xs text-white/50">{event.message}</span>
+            <span className="ml-auto text-3xs font-mono text-white/20">
+              {new Date(event.timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+            </span>
           </div>
         ))}
       </div>
@@ -174,33 +179,23 @@ function RecentEvents({ events }: { events: TrainStatus['recent_events'] }) {
   );
 }
 
-export function TelemetrySidebar({ train, history, stations, onClose }: TelemetrySidebarProps) {
-  if (!train) return <EmptyState />;
+export function TelemetrySidebar({ train, history, stations, onClose, allTrains, events, onSelectTrain }: TelemetrySidebarProps) {
+  if (!train) {
+    return <EmptyState allTrains={allTrains} onSelect={onSelectTrain} />;
+  }
 
-  const statusColor = train.is_in_tunnel
-    ? '#22d3ee'
-    : train.telemetry.b_chop_status
-    ? '#fbbf24'
-    : '#34d399';
-
-  const statusText = train.is_in_tunnel
-    ? 'TUNNEL MODE'
-    : train.telemetry.b_chop_status
-    ? 'REGEN BRAKING'
-    : train.at_station
-    ? 'AT STATION'
-    : 'NOMINAL';
-
+  const statusColor = getTrainStatusColor(train);
+  const statusText = getTrainStatusText(train);
   const lineColor = LINE_CONFIG[train.line].color;
 
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+      <div className="flex items-center justify-between border-b border-scada-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-white/60">Train Inspector</span>
-          <span className="flex items-center gap-1.5 rounded-full bg-[#34d399]/10 px-2 py-0.5 text-[10px] font-mono text-[#34d399]">
-            <span className="h-1 w-1 animate-pulse rounded-full bg-[#34d399]" />
+          <span className="text-xs font-semibold text-white/60">Train Dossier</span>
+          <span className="flex items-center gap-1.5 rounded-full bg-status-normal/10 px-2 py-0.5 text-3xs font-mono text-status-normal">
+            <span className="h-1 w-1 animate-pulse rounded-full bg-status-normal" />
             Live
           </span>
         </div>
@@ -213,7 +208,7 @@ export function TelemetrySidebar({ train, history, stations, onClose }: Telemetr
       </div>
 
       {/* Train Identity */}
-      <div className="border-b border-white/[0.06] px-4 py-3">
+      <div className="border-b border-scada-border px-4 py-3">
         <div className="flex items-center gap-3">
           <div
             className="h-3 w-3 rounded-full animate-pulse"
@@ -224,15 +219,15 @@ export function TelemetrySidebar({ train, history, stations, onClose }: Telemetr
               <p className="font-mono text-lg font-black tracking-tight text-white">{train.id}</p>
               <PhaseBadge phase={train.speed_phase.toUpperCase()} color={lineColor} />
             </div>
-            <p className="text-[10px] font-mono uppercase tracking-wider" style={{ color: statusColor }}>
+            <p className="text-3xs font-mono uppercase tracking-wider" style={{ color: statusColor }}>
               {statusText}
             </p>
           </div>
         </div>
 
-        {/* Phase strip */}
+        {/* Speed phase strip */}
         <div className="mt-2.5 flex gap-1.5">
-          {(['accelerate', 'cruise', 'brake', 'dwell'] as const).map(phase => (
+          {(['accelerate', 'cruise', 'brake', 'dwell'] as const).map((phase) => (
             <div
               key={phase}
               className="flex-1 rounded-md py-1 text-center"
@@ -242,7 +237,7 @@ export function TelemetrySidebar({ train, history, stations, onClose }: Telemetr
               }}
             >
               <span
-                className="text-[8px] font-mono uppercase tracking-wider font-bold"
+                className="text-3xs font-mono uppercase tracking-wider font-bold"
                 style={{ color: train.speed_phase === phase ? lineColor : 'rgba(255,255,255,0.25)' }}
               >
                 {phase}
@@ -256,15 +251,13 @@ export function TelemetrySidebar({ train, history, stations, onClose }: Telemetr
       <div className="flex-1 overflow-y-auto px-4 py-3">
         <div className="space-y-3">
           {/* Speed Gauge */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
+          <div className="rounded-xl border border-scada-border bg-white/[0.03] p-4">
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Gauge className="h-4 w-4 text-[#d7ff5f]" strokeWidth={1.5} />
-                <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">Speed</span>
+                <Gauge className="h-4 w-4 text-brand" strokeWidth={1.5} />
+                <span className="text-2xs font-mono uppercase tracking-wider text-white/40">Speed</span>
               </div>
-              <span className="text-[10px] text-white/30">
-                {LINE_CONFIG[train.line].label}
-              </span>
+              <span className="text-2xs text-white/30">{LINE_CONFIG[train.line].label}</span>
             </div>
             <SpeedGauge speed={train.telemetry.speed_kmh} isBraking={train.telemetry.b_chop_status} />
           </div>
@@ -272,87 +265,81 @@ export function TelemetrySidebar({ train, history, stations, onClose }: Telemetr
           {/* Route Strip */}
           <RouteStrip train={train} stations={stations} />
 
-          {/* Telemetry Grid */}
+          {/* Telemetry Instruments Grid */}
           <div className="grid grid-cols-2 gap-2">
-            <InspectorCard
-              icon={<Zap className="h-4 w-4" strokeWidth={1.5} />}
-              label="B-CHOP Energy"
-              value={Math.round(train.telemetry.energy_recovered_kwh * 10).toString()}
+            <OperationalMetric
+              label="B-CHOP"
+              value={Math.round(train.telemetry.energy_recovered_kwh * 10)}
               unit="kW"
               accent="#d7ff5f"
+              icon={<Zap className="h-3.5 w-3.5" strokeWidth={1.5} />}
             />
-            <InspectorCard
-              icon={<BatteryCharging className="h-4 w-4" strokeWidth={1.5} />}
-              label="Session Recovery"
+            <OperationalMetric
+              label="Session"
               value={train.energy_recovered_session.toFixed(1)}
               unit="kWh"
               accent="#34d399"
+              icon={<BatteryCharging className="h-3.5 w-3.5" strokeWidth={1.5} />}
             />
-            <InspectorCard
-              icon={<Radio className="h-4 w-4" strokeWidth={1.5} />}
-              label="Comms Mode"
+            <OperationalMetric
+              label="Comms"
               value={train.comms_mode === 'TUNNEL_RELAY' ? 'TUNNEL' : 'NORMAL'}
               accent={train.comms_mode === 'TUNNEL_RELAY' ? '#22d3ee' : '#94a3b8'}
+              icon={<Radio className="h-3.5 w-3.5" strokeWidth={1.5} />}
             />
-            <InspectorCard
-              icon={<Wifi className="h-4 w-4" strokeWidth={1.5} />}
-              label="Tunnel Phase"
+            <OperationalMetric
+              label="Tunnel"
               value={train.tunnel_phase.toUpperCase()}
               accent={train.tunnel_phase !== 'none' ? '#22d3ee' : '#94a3b8'}
+              icon={<Wifi className="h-3.5 w-3.5" strokeWidth={1.5} />}
             />
           </div>
 
-          {/* Motor Current & Brake Temp */}
+          {/* Motor & Temp */}
           <div className="grid grid-cols-2 gap-2">
-            <InspectorCard
-              icon={<Zap className="h-4 w-4" strokeWidth={1.5} />}
-              label="Motor Current"
-              value={Math.round(train.telemetry.motor_current_amps).toString()}
+            <OperationalMetric
+              label="Motor"
+              value={Math.round(train.telemetry.motor_current_amps)}
               unit="A"
               accent="#60a5fa"
+              icon={<Zap className="h-3.5 w-3.5" strokeWidth={1.5} />}
             />
-            <InspectorCard
-              icon={<Thermometer className="h-4 w-4" strokeWidth={1.5} />}
+            <OperationalMetric
               label="Brake Temp"
-              value={Math.round(train.telemetry.regen_braking_temp).toString()}
+              value={Math.round(train.telemetry.regen_braking_temp)}
               unit="°C"
               accent={train.telemetry.regen_braking_temp > 70 ? '#ef4444' : train.telemetry.regen_braking_temp > 55 ? '#fbbf24' : '#34d399'}
+              icon={<Thermometer className="h-3.5 w-3.5" strokeWidth={1.5} />}
             />
           </div>
 
-          {/* Block Occupancy */}
-          <InspectorCard
-            icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5} />}
+          {/* Block Occupancy / Risk */}
+          <OperationalMetric
             label="Block Occupancy"
+            value={Math.round(train.block_occupancy * 100)}
+            unit="%"
             accent={train.block_occupancy > 0.7 ? '#ef4444' : train.block_occupancy > 0.4 ? '#fbbf24' : '#34d399'}
+            icon={<AlertTriangle className="h-3.5 w-3.5" strokeWidth={1.5} />}
           >
-            <div className="mt-2">
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-black" style={{ color: train.block_occupancy > 0.7 ? '#ef4444' : train.block_occupancy > 0.4 ? '#fbbf24' : '#34d399' }}>
-                  {Math.round(train.block_occupancy * 100)}
-                </span>
-                <span className="text-[10px] text-white/40">%</span>
-              </div>
-              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${train.block_occupancy * 100}%`,
-                    backgroundColor: train.block_occupancy > 0.7 ? '#ef4444' : train.block_occupancy > 0.4 ? '#fbbf24' : '#34d399',
-                  }}
-                />
-              </div>
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${train.block_occupancy * 100}%`,
+                  backgroundColor: train.block_occupancy > 0.7 ? '#ef4444' : train.block_occupancy > 0.4 ? '#fbbf24' : '#34d399',
+                }}
+              />
             </div>
-          </InspectorCard>
+          </OperationalMetric>
 
           {/* Braking Phase */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5">
+          <div className="rounded-xl border border-scada-border bg-white/[0.03] p-3.5">
             <div className="mb-2 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-[#fbbf24]" strokeWidth={1.5} />
-              <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">Braking Phase</span>
+              <AlertTriangle className="h-4 w-4 text-status-warning" strokeWidth={1.5} />
+              <span className="text-2xs font-mono uppercase tracking-wider text-white/40">Braking Phase</span>
             </div>
             <div className="flex gap-1">
-              {(['none', 'initial', 'heavy', 'regen'] as const).map(phase => (
+              {(['none', 'initial', 'heavy', 'regen'] as const).map((phase) => (
                 <div
                   key={phase}
                   className="flex-1 rounded py-1 text-center"
@@ -362,7 +349,7 @@ export function TelemetrySidebar({ train, history, stations, onClose }: Telemetr
                   }}
                 >
                   <span
-                    className="text-[8px] font-mono uppercase font-bold"
+                    className="text-3xs font-mono uppercase font-bold"
                     style={{ color: train.braking_phase === phase ? '#fbbf24' : 'rgba(255,255,255,0.25)' }}
                   >
                     {phase}
@@ -372,13 +359,13 @@ export function TelemetrySidebar({ train, history, stations, onClose }: Telemetr
             </div>
           </div>
 
-          {/* Recent Events */}
-          <RecentEvents events={train.recent_events} />
+          {/* Event Memory */}
+          <EventMemory events={events} trainId={train.id} />
 
           {/* Energy Chart */}
           {history.length > 1 && (
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
-              <p className="mb-3 text-[10px] font-mono uppercase tracking-wider text-white/40">Energy History</p>
+            <div className="rounded-xl border border-scada-border bg-white/[0.03] p-4">
+              <p className="mb-3 text-2xs font-mono uppercase tracking-wider text-white/40">Energy History</p>
               <EnergyChart history={history} />
             </div>
           )}
@@ -386,8 +373,8 @@ export function TelemetrySidebar({ train, history, stations, onClose }: Telemetr
       </div>
 
       {/* Footer */}
-      <div className="border-t border-white/[0.06] px-4 py-3">
-        <div className="flex items-center justify-between text-[10px] font-mono text-white/20">
+      <div className="border-t border-scada-border px-4 py-3">
+        <div className="flex items-center justify-between text-3xs font-mono text-white/20">
           <span>Block: {train.position.current_station_id}</span>
           <span>Line: {LINE_CONFIG[train.line].label}</span>
         </div>

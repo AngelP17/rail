@@ -13,6 +13,14 @@ import { TrainMarker } from './TrainMarker';
 import { LINE_CONFIG } from '../types/train';
 import { deriveSignalBlocks } from '../simulation/deriveSignalBlocks';
 import type { SignalBlock } from '../simulation/deriveSignalBlocks';
+import {
+  getBlockColor,
+  getTrainStatusColor,
+  buildStationMap,
+  groupStationsByLine,
+  getFilteredTrains,
+  getFilteredLines,
+} from '../utils/sharedStyling';
 
 const MAP_CENTER: [number, number] = [8.98, -79.52];
 const MAP_ZOOM = 11;
@@ -36,13 +44,6 @@ const TUNNEL_LINE_STYLE = {
   lineCap: 'round' as const,
   lineJoin: 'round' as const,
 };
-
-function getBlockColor(status: SignalBlock['status']): string {
-  if (status === 'occupied') return '#ef4444';
-  if (status === 'approach') return '#fbbf24';
-  if (status === 'restricted') return '#22d3ee';
-  return '#34d399';
-}
 
 interface MapProps {
   trains: TrainStatus[];
@@ -282,11 +283,7 @@ function TrainProgressTrail({ train, stationMap }: { train: TrainStatus; station
   const currentStation = stationMap.get(train.position.current_station_id);
   if (!currentStation) return null;
 
-  const color = train.is_in_tunnel
-    ? '#22d3ee'
-    : train.telemetry.b_chop_status
-      ? '#fbbf24'
-      : LINE_CONFIG[train.line].color;
+  const color = getTrainStatusColor(train);
 
   return (
     <>
@@ -329,25 +326,10 @@ export function Map({
   selectedTrainId,
   onSelectTrain,
 }: MapProps) {
-  const stationsByLine = useMemo(() => {
-    const grouped: Record<MetroLine, Station[]> = {
-      line1: [],
-      line2: [],
-      line3: [],
-    };
-    allStations.forEach((station) => {
-      grouped[station.line].push(station);
-    });
-    return grouped;
-  }, [allStations]);
-
-  const filteredTrains = selectedLine === 'all' ? trains : trains.filter((t) => t.line === selectedLine);
+  const stationsByLine = useMemo(() => groupStationsByLine(allStations), [allStations]);
+  const filteredTrains = useMemo(() => getFilteredTrains(trains, selectedLine), [trains, selectedLine]);
   const signalBlocks = useMemo(() => deriveSignalBlocks(trains), [trains]);
-  const stationMap = useMemo(() => {
-    const map = new globalThis.Map<string, Station>();
-    allStations.forEach((station) => map.set(station.id, station));
-    return map;
-  }, [allStations]);
+  const stationMap = useMemo(() => buildStationMap(allStations), [allStations]);
 
   return (
     <div className="relative h-full w-full">
@@ -361,10 +343,7 @@ export function Map({
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
         <MapBoundsHandler allRouteCoordinates={allRouteCoordinates} />
 
-        {(selectedLine === 'all'
-          ? (['line1', 'line2', 'line3'] as MetroLine[])
-          : [selectedLine]
-        ).map((line) => (
+        {getFilteredLines(selectedLine).map((line) => (
           <RouteLine key={line} line={line} coordinates={allRouteCoordinates[line] || []} />
         ))}
 
@@ -374,10 +353,7 @@ export function Map({
           <TrainProgressTrail key={`trail-${train.id}`} train={train} stationMap={stationMap} />
         ))}
 
-        {(selectedLine === 'all'
-          ? (['line1', 'line2', 'line3'] as MetroLine[])
-          : [selectedLine]
-        ).map((line) =>
+        {getFilteredLines(selectedLine).map((line) =>
           stationsByLine[line]?.map((station, index) => (
             <StationMarker
               key={station.id}

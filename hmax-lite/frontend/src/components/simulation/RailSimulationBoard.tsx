@@ -15,6 +15,15 @@ import type { TrainStatus, Station, MetroLine } from '../../types/train';
 import { LINE_CONFIG } from '../../types/train';
 import type { SignalBlock } from '../../simulation/deriveSignalBlocks';
 import { deriveSignalBlocks } from '../../simulation/deriveSignalBlocks';
+import {
+  getBlockColor,
+  getTrainStatusColor,
+  buildStationMap,
+  buildRouteCoords,
+  groupStationsByLine,
+  getFilteredTrains,
+  getFilteredLines,
+} from '../../utils/sharedStyling';
 
 gsap.registerPlugin(useGSAP);
 
@@ -108,13 +117,6 @@ function StationNode({ station, isTerminal, isTunnel, isSelected }: {
   );
 }
 
-function getBlockColor(status: SignalBlock['status']): string {
-  if (status === 'occupied') return '#ef4444';
-  if (status === 'approach') return '#fbbf24';
-  if (status === 'restricted') return '#22d3ee';
-  return '#34d399';
-}
-
 function TrainCapsule({ train, isSelected, onClick, stationMap }: {
   train: TrainStatus;
   isSelected: boolean;
@@ -122,7 +124,7 @@ function TrainCapsule({ train, isSelected, onClick, stationMap }: {
   stationMap: Map<string, Station>;
 }) {
   const [x, y] = geoToSvg(train.position.lat, train.position.lng);
-  const color = train.is_in_tunnel ? '#22d3ee' : train.telemetry.b_chop_status ? '#fbbf24' : LINE_CONFIG[train.line].color;
+  const color = getTrainStatusColor(train);
   const capsuleWidth = isSelected ? 32 : 24;
   const capsuleHeight = isSelected ? 14 : 10;
   const currentStation = stationMap.get(train.position.current_station_id);
@@ -478,35 +480,17 @@ export function RailSimulationBoard({
   const svgRef = useRef<SVGSVGElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const stationsByLine = useMemo(() => {
-    const grouped: Record<MetroLine, Station[]> = { line1: [], line2: [], line3: [] };
-    stations.forEach(s => grouped[s.line].push(s));
-    return grouped;
-  }, [stations]);
-
-  const routeCoords = useMemo(() => {
-    const coords: Record<MetroLine, [number, number][]> = { line1: [], line2: [], line3: [] };
-    stations.forEach(s => coords[s.line].push([s.lat, s.lng]));
-    return coords;
-  }, [stations]);
-
-  const stationMap = useMemo(() => {
-    const map = new Map<string, Station>();
-    stations.forEach(station => map.set(station.id, station));
-    return map;
-  }, [stations]);
-
-  const filteredTrains = useMemo(() =>
-    selectedLine === 'all' ? trains : trains.filter(t => t.line === selectedLine),
-    [trains, selectedLine]
-  );
+  const stationsByLine = useMemo(() => groupStationsByLine(stations), [stations]);
+  const routeCoords = useMemo(() => buildRouteCoords(stations), [stations]);
+  const stationMap = useMemo(() => buildStationMap(stations), [stations]);
+  const filteredTrains = useMemo(() => getFilteredTrains(trains, selectedLine), [trains, selectedLine]);
 
   const boardSignalBlocks = useMemo(
     () => signalBlocks.length > 0 ? signalBlocks : deriveSignalBlocks(trains),
     [signalBlocks, trains],
   );
 
-  const linesToShow: MetroLine[] = selectedLine === 'all' ? ['line1', 'line2', 'line3'] : [selectedLine];
+  const linesToShow = useMemo(() => getFilteredLines(selectedLine), [selectedLine]);
 
   useGSAP(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;

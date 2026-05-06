@@ -1,26 +1,31 @@
 # HMAX-Lite: Panama Metro Digital Twin
 
 <p align="center">
-  <img src="hmax-lite/docs/screenshots/dashboard-full.png" alt="HMAX-Lite Dashboard" width="800"/>
+  <img src="hmax-lite/docs/screenshots/landing.png" alt="HMAX-Lite Landing" width="800"/>
 </p>
 
 ## 🚝 Project Overview
 
-**HMAX-Lite** is a real-time SCADA (Supervisory Control and Data Acquisition) simulation designed to model the telemetry and operations of the **Panama Metro System**, including Lines 1, 2, and 3.
+**HMAX-Lite** is a flagship digital twin and real-time SCADA simulation for the **Panama Metro System**, covering Lines 1, 2, and 3 in a unified Operations Control Center (OCC) shell.
 
-This project serves as a "Digital Twin" proof-of-concept for the **Hitachi Rail / HPH Consortium**, visualizing the movement of monorail and metro trainsets across all three lines:
-- **Line 1** (Red): San Isidro ↔ Albrook (North-South)
-- **Line 2** (Green): Nuevo Tocumen ↔ Albrook (East-West)
-- **Line 3** (Blue): Albrook ↔ Ciudad del Futuro (Westbound)
+Built as a portfolio-grade demonstration, it features a cinematic landing layer and a dense, operational console with live CBTC telemetry, B-CHOP regenerative braking visualization, tunnel relay geofencing, and moving-block signal simulation.
+
+### Three Surfaces
+
+| Surface | Purpose |
+|---------|---------|
+| **Portfolio Landing** | Cinematic presentation with project story, system capabilities, and direct entry points |
+| **OCC Console** | Live simulation board, geographic map, train dossier inspector, and event timeline |
+| **Documentation** | Architecture notes, API reference, and screenshot library |
 
 ### Key Engineering Challenges Addressed
 
 | Challenge | Solution |
 |-----------|----------|
-| **Multi-Line Operations** | Unified dashboard supporting all 3 metro lines with 39 total stations |
+| **Multi-Line Operations** | Unified console supporting all 3 metro lines with 39 total stations |
 | **Canal Tunnel Geofencing** | Dead-zone detection with `TUNNEL_RELAY` communication mode (Line 3) |
-| **B-CHOP Energy Recovery** | Real-time regenerative braking telemetry simulation |
-| **CBTC Moving Block** | Dynamic headway management between active trains |
+| **B-CHOP Energy Recovery** | Real-time regenerative braking telemetry with network battery visualization |
+| **CBTC Moving Block** | Dynamic headway management, block occupancy risk, and signal block heat |
 
 ---
 
@@ -28,14 +33,14 @@ This project serves as a "Digital Twin" proof-of-concept for the **Hitachi Rail 
 
 ```mermaid
 flowchart LR
-    Browser["Browser\nReact + Vite + Leaflet"] --> Query["TanStack Query\n1s polling"]
+    Browser["Browser\nReact + Vite + GSAP"] --> Query["TanStack Query\n1s polling"]
     Query -->|"GET /api/trains\nGET /api/stations"| API["FastAPI backend"]
     API --> Engine["Simulation engine\nposition, speed, dwell, B-CHOP"]
     Engine --> Routes["Station and route data\nLines 1, 2, 3"]
     Routes --> Engine
     Engine --> API
     API --> Query
-    Query --> UI["Operations view\nfleet rail, map, telemetry"]
+    Query --> UI["Operations view\nboard, map, telemetry"]
     Mock["Frontend mock telemetry\nAPI fallback or VITE_USE_MOCK=true"] -.-> Query
 
     classDef client fill:#0f172a,stroke:#22d3ee,color:#fff
@@ -49,35 +54,38 @@ flowchart LR
 ### Dashboard Screenshots
 
 <p align="center">
-  <img src="hmax-lite/docs/screenshots/dashboard-full.png" alt="Full Dashboard - All Lines" width="800"/>
+  <img src="hmax-lite/docs/screenshots/landing.png" alt="Portfolio Landing" width="800"/>
+</p>
+<p align="center">
+  <em>Cinematic landing layer with Panama Metro story and system capabilities</em>
 </p>
 
 <p align="center">
-  <em>Full dashboard with 13 active trains across Lines 1, 2, and 3</em>
+  <img src="hmax-lite/docs/screenshots/dashboard-full.png" alt="Full Dashboard - All Lines" width="800"/>
+</p>
+<p align="center">
+  <em>OCC console with simulation board, command HUD, train dossier, and live event timeline</em>
 </p>
 
 <p align="center">
   <img src="hmax-lite/docs/screenshots/dashboard-telemetry.png" alt="Train Telemetry View" width="800"/>
 </p>
-
 <p align="center">
-  <em>Train telemetry with speed gauge, energy chart, and route progress</em>
+  <em>Train dossier with speed gauge, route strip, block occupancy, and event memory</em>
 </p>
 
 <p align="center">
   <img src="hmax-lite/docs/screenshots/dashboard-line3.png" alt="Line 3 View" width="800"/>
 </p>
-
 <p align="center">
-  <em>Line 3 filtered view showing tunnel detection and monorail fleet</em>
+  <em>Line 3 focus with tunnel relay state, B-CHOP pulses, and monorail fleet</em>
 </p>
 
 <p align="center">
   <img src="hmax-lite/docs/screenshots/dashboard-map.png" alt="Geographic Map View" width="800"/>
 </p>
-
 <p align="center">
-  <em>Leaflet map view with CartoDB dark tiles, route polylines, and train markers</em>
+  <em>Leaflet map mode with unified rail glow, block heat, and train markers</em>
 </p>
 
 ---
@@ -88,35 +96,37 @@ flowchart LR
 
 **Comprehensive Coverage:** All three Panama Metro lines with 39 stations total.
 
-- **Line Selector:** Filter dashboard by individual line or view all lines simultaneously
-- **Color-Coded Routes:** Each line has distinct color (Red/Green/Blue) for easy identification
+- **Line Selector:** Filter console by individual line or view all corridors simultaneously
+- **Color-Coded Routes:** Line 1 red, Line 2 green, Line 3 blue
 - **Interchange Stations:** Albrook station serves as interchange for all three lines
-- **Line-Specific Trains:** 13 total trains (4 on Line 1, 4 on Line 2, 5 on Line 3)
+- **Line-Specific Trains:** 13 total trains across the network
 
 ### 2. 🚇 Canal Tunnel "Dead Zone" Logic (Line 3)
 
 **Engineering Context:** The 5.3km tunnel under the Panama Canal requires specific communication relays and safety protocols.
 
-- **Geofence Detection:** System automatically detects when trains enter the zone between Balboa and Panama Pacifico
-- **Visual Feedback:** Dashboard switches train status to `TUNNEL_MODE` with cyan indicators
+- **Geofence Detection:** Automatic detection when trains enter the zone between Balboa and Panama Pacifico
+- **Visual Feedback:** Tunnel mode with cyan indicators and relay state
 - **Communication Mode:** Telemetry switches to `TUNNEL_RELAY` protocol simulation
-- **Line-Specific:** Tunnel functionality only applies to Line 3 trains
+- **Event Memory:** Tunnel entry, exit, and comms handoff events tracked per train
 
 ### 3. 🔋 B-CHOP Energy Recovery Monitor
 
 **Engineering Context:** Hitachi monorails utilize the B-CHOP (Brake CHOPper) system to capture regenerative braking energy.
 
-- **Physics Simulation:** Deceleration triggers regenerative braking mode
+- **Physics Simulation:** Deceleration triggers regenerative braking mode with energy pulses
 - **Real-time Telemetry:** `energy_recovered_kwh` spikes during braking events
-- **Temperature Monitoring:** Brake system temperature varies 40°C - 90°C
+- **Network Battery:** System-wide energy recovery visualization
+- **Temperature Monitoring:** Brake system temperature 40°C - 90°C
 
 ### 4. ⏱️ CBTC Moving Block Simulation
 
 **Engineering Context:** Communications-Based Train Control (CBTC) enables safe, close-proximity train operations.
 
 - **ETA Calculations:** Real-time "Next Station ETA" for each train
-- **Headway Management:** Virtual spacing management between active trains
-- **Speed Curves:** Realistic acceleration/deceleration profiles
+- **Block Occupancy:** 0-100% block risk with color-coded rail heat
+- **Headway Management:** Virtual spacing and compression events
+- **Speed Curves:** Realistic acceleration / cruise / brake / dwell phases
 
 ---
 
@@ -124,10 +134,11 @@ flowchart LR
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| **Backend** | Python 3.11, FastAPI | Telemetry Engine, Physics Simulation |
-| **Frontend** | React 18, Vite, TypeScript | HMI Dashboard |
+| **Backend** | Python 3.14, FastAPI | Telemetry Engine, Physics Simulation |
+| **Frontend** | React 18, Vite, TypeScript | HMI Dashboard, Landing Layer |
 | **Maps** | Leaflet, React-Leaflet | Geospatial Visualization |
 | **Styling** | Tailwind CSS | Industrial Dark Mode UI |
+| **Motion** | GSAP | State transitions, scan sweeps, text reveals |
 | **State** | TanStack Query | Real-time State Sync |
 | **Infra** | Docker, Docker Compose | Container Orchestration |
 
@@ -154,7 +165,7 @@ docker-compose up --build
 
 | Service | URL |
 |---------|-----|
-| **Operations Dashboard** | http://localhost:3000 |
+| **Portfolio & Console** | http://localhost:3000 |
 | **API Documentation** | http://localhost:8000/docs |
 | **Health Check** | http://localhost:8000/health |
 
@@ -244,27 +255,36 @@ hmax-lite/
 │   ├── vite.config.ts
 │   ├── tailwind.config.js
 │   └── src/
-│       ├── App.tsx               # Main dashboard layout
+│       ├── App.tsx               # App shell: Landing + Console
 │       ├── components/
-│       │   ├── Header.tsx         # Line selector & system status
-│       │   ├── Map.tsx            # Multi-line Leaflet map
-│       │   ├── TrainMarker.tsx    # Line-colored train SVG icons
-│       │   ├── TrainList.tsx      # Fleet list grouped by line
-│       │   ├── TelemetrySidebar.tsx # Full telemetry panel
-│       │   ├── SpeedGauge.tsx     # SVG circular gauge
-│       │   ├── EnergyChart.tsx    # Recharts area chart + temp gauge
-│       │   ├── MetricsCard.tsx    # Reusable metric with sparkline
-│       │   └── PageTransition.tsx # Animation wrappers
+│       │   ├── LandingPage.tsx      # Portfolio presentation layer
+│       │   ├── primitives.tsx       # HudPanel, StatusRail, ModeToggle, OperationalMetric
+│       │   ├── simulation/
+│       │   │   └── RailSimulationBoard.tsx  # Hero SVG playfield
+│       │   ├── Map.tsx              # Geographic context mode
+│       │   ├── TelemetrySidebar.tsx # Train dossier inspector
+│       │   ├── EventTimeline.tsx    # Severity-lane event strip
+│       │   ├── ScenarioDirector.tsx # Scenario mode selector
+│       │   ├── TrainMarker.tsx      # Leaflet train markers
+│       │   ├── SpeedGauge.tsx       # SVG circular gauge
+│       │   ├── EnergyChart.tsx      # Recharts area chart
+│       │   └── ErrorBoundary.tsx    # Global error boundary
 │       ├── hooks/
 │       │   └── useTrains.ts       # Data fetching + mock fallback
 │       ├── types/
 │       │   └── train.ts           # MetroLine types & config
-│       └── utils/
-│           ├── api.ts             # API client with mock fallback
-│           └── mockData.ts        # Realistic mock telemetry data
+│       ├── utils/
+│       │   ├── api.ts             # API client with mock fallback
+│       │   ├── sharedStyling.ts   # Unified block/train/line colors
+│       │   └── mockData.ts        # Realistic mock telemetry data
+│       └── simulation/
+│           ├── deriveEvents.ts
+│           ├── deriveSignalBlocks.ts
+│           └── deriveSimulationFrame.ts
 └── docs/
     ├── architecture.md
     └── screenshots/
+        ├── landing.png
         ├── dashboard-full.png
         ├── dashboard-telemetry.png
         ├── dashboard-line3.png
@@ -278,19 +298,28 @@ hmax-lite/
 ### Backend (FastAPI)
 
 ```bash
-cd backend
-python -m venv venv
+cd hmax-lite/backend
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python3 -m uvicorn main:app --reload --port 8000
 ```
 
 ### Frontend (React + Vite)
 
 ```bash
-cd frontend
+cd hmax-lite/frontend
 npm install
 npm run dev
+npm run build
+npm run lint
+```
+
+### Full Stack (Docker)
+
+```bash
+cd hmax-lite
+docker-compose up --build
 ```
 
 ---
@@ -309,13 +338,21 @@ npm run dev
 
 ---
 
-## 🎨 Line Colors
+## 🎨 Design System
 
-| Line | Color | Hex Code | Route |
-|------|-------|----------|-------|
-| Line 1 | Red | `#ef4444` | San Isidro ↔ Albrook |
-| Line 2 | Green | `#22c55e` | Nuevo Tocumen ↔ Albrook |
-| Line 3 | Blue | `#3b82f6` | Albrook ↔ Ciudad del Futuro |
+| Token | Value | Usage |
+|-------|-------|-------|
+| Background | `#06090f` | OCC shell background |
+| Surface | `#0a0e14` | Panels and cards |
+| Brand | `#d7ff5f` | Primary accent, CTAs, energy |
+| Line 1 | `#ef4444` | Red corridor |
+| Line 2 | `#22c55e` | Green corridor |
+| Line 3 | `#3b82f6` | Blue corridor |
+| Tunnel | `#22d3ee` | Tunnel relay state |
+| Warning | `#fbbf24` | Braking, headway compression |
+| Danger | `#ef4444` | Block occupancy critical |
+
+Typography: **Outfit** (UI) + **JetBrains Mono** (telemetry / data)
 
 ---
 
